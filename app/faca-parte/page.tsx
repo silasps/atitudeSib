@@ -28,7 +28,7 @@ export default async function FacaPartePage() {
       />
 
       <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 md: p-6 md:grid-cols-2">
           <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
             <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
               Voluntariado

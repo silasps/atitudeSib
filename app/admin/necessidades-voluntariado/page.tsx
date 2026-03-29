@@ -65,7 +65,7 @@ export default function NecessidadesVoluntariadoPage() {
         <div className="flex flex-1 flex-col">
           <Header />
 
-          <main className="flex-1 space-y-6 p-6">
+          <main className="flex-1 p-4 md:p-4 md: p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <PageTitle
                 title="Necessidades de voluntariado"
@@ -74,7 +74,7 @@ export default function NecessidadesVoluntariadoPage() {
 
               <Link
                 href="/admin/necessidades-voluntariado/nova"
-                className="rounded-xl bg-zinc-900 px-4 py-3 text-sm font-medium text-white"
+                className="rounded-xl border bg-zinc-900 px-4 py-3 text-sm font-medium text-white"
               >
                 Nova necessidade
               </Link>

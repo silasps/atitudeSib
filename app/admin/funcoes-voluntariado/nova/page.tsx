@@ -79,7 +79,7 @@ export default function NovaFuncaoVoluntariadoPage() {
         <div className="flex flex-1 flex-col">
           <Header />
 
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-4 md:p-4 md: p-6">
             <div className="mx-auto max-w-3xl space-y-6">
               <PageTitle
                 title="Nova função"
@@ -88,7 +88,7 @@ export default function NovaFuncaoVoluntariadoPage() {
 
               <form
                 onSubmit={handleSubmit}
-                className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
+                className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm"
               >
                 <div>
                   <label className="mb-1 block text-sm font-medium text-zinc-700">

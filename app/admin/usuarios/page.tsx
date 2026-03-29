@@ -139,15 +139,15 @@ export default function UsuariosPage() {
         <div className="flex flex-1 flex-col">
           <Header />
 
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-4 md:p-4 md: p-6">
             <div className="mx-auto max-w-6xl space-y-6">
               <PageTitle
                 title="Usuários do painel"
                 subtitle="Gerencie quem pode acessar a área administrativa"
               />
 
-              <div className="grid gap-6 xl:grid-cols-2">
-                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <div className="grid gap-4 md: p-6 xl:grid-cols-2">
+                <section className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
                   <h2 className="text-lg font-semibold text-zinc-900">
                     Autorizar novo usuário
                   </h2>
@@ -240,7 +240,7 @@ export default function UsuariosPage() {
                   </form>
                 </section>
 
-                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <section className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
                   <h2 className="text-lg font-semibold text-zinc-900">
                     Usuários autorizados
                   </h2>

@@ -17,7 +17,7 @@ export function PublicFooter({
 }: PublicFooterProps) {
   return (
     <footer className="border-t border-zinc-200 bg-white">
-      <div className="mx-auto grid max-w-7xl gap-6 px-6 py-10 md:grid-cols-3">
+      <div className="mx-auto grid max-w-7xl gap-4 md: p-6 px-6 py-10 md:grid-cols-3">
         <div>
           <h4 className="font-semibold text-zinc-900">{projectName}</h4>
           <p className="mt-2 text-sm text-zinc-500">{projectSubtitle}</p>

@@ -261,8 +261,8 @@ async function handleCreateUser() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-50 p-6">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <div className="min-h-screen bg-zinc-50 p-4 md: p-6">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
           <p className="text-sm text-zinc-600">Carregando candidatura...</p>
         </div>
       </div>
@@ -271,8 +271,8 @@ async function handleCreateUser() {
 
   if (!candidatura) {
     return (
-      <div className="min-h-screen bg-zinc-50 p-6">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <div className="min-h-screen bg-zinc-50 p-4 md: p-6">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
           <p className="text-sm text-zinc-600">Candidatura não encontrada.</p>
         </div>
       </div>
@@ -286,7 +286,7 @@ async function handleCreateUser() {
         <div className="flex flex-1 flex-col">
           <Header />
 
-          <main className="flex-1 space-y-6 p-6">
+          <main className="flex-1 p-4 md:p-4 md: p-6">
             <div className="flex items-start justify-between gap-4">
               <PageTitle
                 title="Analisar candidatura"
@@ -301,8 +301,8 @@ async function handleCreateUser() {
               </Link>
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-3">
-              <section className="xl:col-span-2 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="grid gap-4 md: p-6 xl:grid-cols-3">
+              <section className="xl:col-span-2 rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-zinc-900">Dados do candidato</h2>
 
                 <div className="mt-5 grid gap-4 md:grid-cols-2 text-sm text-zinc-700">
@@ -336,7 +336,7 @@ async function handleCreateUser() {
               </section>
 
               <aside className="space-y-6">
-                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <section className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
                   <h2 className="text-lg font-semibold text-zinc-900">Resumo da análise</h2>
 
                   <div className="mt-4 space-y-3 text-sm text-zinc-700">
@@ -367,7 +367,7 @@ async function handleCreateUser() {
                   </div>
                 </section>
 
-                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <section className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
                   <h2 className="text-lg font-semibold text-zinc-900">Capacidade da necessidade</h2>
 
                   <div className="mt-4 space-y-3 text-sm text-zinc-700">
@@ -422,7 +422,7 @@ async function handleCreateUser() {
             </div>
             {showCreateUser && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                <div className="w-full max-w-md rounded-2xl bg-white p-6">
+                <div className="w-full max-w-md rounded-2xl bg-white p-4 md: p-6">
                   <h2 className="text-lg font-semibold">Criar acesso</h2>
 
                   <div className="mt-4 space-y-3">

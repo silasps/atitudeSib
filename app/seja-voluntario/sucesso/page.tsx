@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function CandidaturaSucessoPage() {
   return (
-    <main className="min-h-screen bg-zinc-50 p-6">
+    <main className="min-h-screen bg-zinc-50 p-4 md: p-6">
       <div className="mx-auto max-w-2xl rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
         <p className="text-sm font-medium text-zinc-500">Projeto Atitude</p>
         <h1 className="mt-2 text-3xl font-bold text-zinc-900">

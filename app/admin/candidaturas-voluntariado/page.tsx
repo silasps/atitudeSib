@@ -103,7 +103,7 @@ export default function CandidaturasVoluntariadoPage() {
         <div className="flex flex-1 flex-col">
           <Header />
 
-          <main className="flex-1 space-y-6 p-6">
+          <main className="flex-1 p-4 md:p-4 md: p-6">
             <PageTitle
               title="Candidaturas de voluntariado"
               subtitle="Acompanhe os candidatos que entraram no fluxo público"
@@ -156,11 +156,11 @@ export default function CandidaturasVoluntariadoPage() {
             </div>
 
             {loading ? (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
                 <p className="text-sm text-zinc-600">Carregando candidaturas...</p>
               </div>
             ) : candidaturasFiltradas.length === 0 ? (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
                 <p className="text-sm text-zinc-600">
                   Nenhuma candidatura encontrada.
                 </p>

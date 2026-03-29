@@ -198,8 +198,8 @@ export default function ConfiguracoesPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-zinc-50 p-6">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <main className="min-h-screen bg-zinc-50 p-4 md: p-6">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
           Carregando...
         </div>
       </main>
@@ -213,7 +213,7 @@ export default function ConfiguracoesPage() {
         <div className="flex flex-1 flex-col">
           <Header />
 
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-4 md:p-4 md: p-6">
             <div className="mx-auto max-w-6xl space-y-6">
               <PageTitle
                 title="Configurações do site"
@@ -222,7 +222,7 @@ export default function ConfiguracoesPage() {
 
               <form
                 onSubmit={handleSubmit}
-                className="space-y-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
+                className="space-y-8 rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm"
               >
                 <SectionTitle
                   title="Identidade do projeto"
@@ -387,7 +387,7 @@ export default function ConfiguracoesPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 p-6 text-sm text-zinc-500">
+                      <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 p-4 md: p-6 text-sm text-zinc-500">
                         Nenhuma imagem principal informada.
                       </div>
                     )}
@@ -425,28 +425,28 @@ export default function ConfiguracoesPage() {
                   />
                 </div>
 
-                <div className="rounded-3xl border border-zinc-200 p-6">
+                <div className="rounded-3xl border border-zinc-200 p-4 md: p-6">
                   <p className="text-sm font-medium text-zinc-900">
                     Prévia rápida das cores
                   </p>
 
                   <div className="mt-4 grid gap-4 md:grid-cols-3">
                     <div
-                      className="rounded-2xl p-6 text-white"
+                      className="rounded-2xl p-4 md: p-6 text-white"
                       style={{ backgroundColor: config.primary_color }}
                     >
                       Cor principal
                     </div>
 
                     <div
-                      className="rounded-2xl p-6 text-zinc-900"
+                      className="rounded-2xl p-4 md: p-6 text-zinc-900"
                       style={{ backgroundColor: config.secondary_color }}
                     >
                       Cor secundária
                     </div>
 
                     <div
-                      className="rounded-2xl p-6 text-white"
+                      className="rounded-2xl p-4 md: p-6 text-white"
                       style={{ backgroundColor: config.accent_color }}
                     >
                       Cor de destaque

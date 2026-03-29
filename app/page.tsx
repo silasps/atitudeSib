@@ -45,7 +45,7 @@ export default async function HomePage() {
         <div className="absolute inset-0">
           {config.hero_image_url ? (
             <img
-              src={config.hero_image_url}
+              src={config.hero_image_url?.trim()}
               alt="Imagem principal do projeto"
               className="h-full w-full object-cover"
             />

@@ -41,8 +41,8 @@ export default async function ContatoPage() {
             Fale com a equipe do projeto pelos canais abaixo.
           </p>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            <div className="rounded-2xl bg-zinc-50 p-6">
+          <div className="mt-8 grid gap-4 md: p-6 md:grid-cols-2">
+            <div className="rounded-2xl bg-zinc-50 p-4 md: p-6">
               <h2 className="text-lg font-semibold text-zinc-900">
                 Canais principais
               </h2>
@@ -54,7 +54,7 @@ export default async function ContatoPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-zinc-50 p-6">
+            <div className="rounded-2xl bg-zinc-50 p-4 md: p-6">
               <h2 className="text-lg font-semibold text-zinc-900">Redes sociais</h2>
 
               <div className="mt-4 space-y-2 text-zinc-600">

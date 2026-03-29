@@ -144,8 +144,8 @@ export default function EditarNecessidadeVoluntariadoPage() {
 
   if (loadingPage) {
     return (
-      <main className="min-h-screen bg-zinc-50 p-6">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <main className="min-h-screen bg-zinc-50 p-4 md: p-6">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
           <p className="text-sm text-zinc-600">Carregando necessidade...</p>
         </div>
       </main>
@@ -159,7 +159,7 @@ export default function EditarNecessidadeVoluntariadoPage() {
         <div className="flex flex-1 flex-col">
           <Header />
 
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-4 md:p-4 md: p-6">
             <div className="mx-auto max-w-4xl space-y-6">
               <div className="flex items-start justify-between gap-4">
                 <PageTitle
@@ -177,7 +177,7 @@ export default function EditarNecessidadeVoluntariadoPage() {
 
               <form
                 onSubmit={handleSubmit}
-                className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
+                className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm"
               >
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="md:col-span-2">

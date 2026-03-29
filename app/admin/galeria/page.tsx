@@ -209,14 +209,14 @@ async function handleDeleteImage() {
         <div className="flex flex-1 flex-col">
           <Header />
 
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-4 md:p-4 md: p-6">
             <div className="mx-auto max-w-6xl space-y-6">
               <PageTitle
                 title="Galeria"
                 subtitle="Envie imagens para usar nas páginas públicas do projeto"
               />
 
-              <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <section className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-zinc-900">
                   Enviar nova imagem
                 </h2>
@@ -249,7 +249,7 @@ async function handleDeleteImage() {
                 ) : null}
               </section>
 
-              <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <section className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-zinc-900">
                   Imagens enviadas
                 </h2>
@@ -326,7 +326,7 @@ async function handleDeleteImage() {
                 )}
                 {editingItem ? (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+                      <div className="w-full max-w-lg rounded-2xl bg-white p-4 md: p-6 shadow-xl">
                       <h2 className="text-lg font-semibold text-zinc-900">
                           Editar imagem
                       </h2>

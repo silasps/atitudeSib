@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { AdminSidebarProvider } from "@/components/layout/admin-sidebar-context";
 
 export default async function AdminLayout({
   children,
@@ -23,13 +24,9 @@ export default async function AdminLayout({
     .eq("ativo", true)
     .maybeSingle();
 
-  if (error) {
+  if (error || !adminUser) {
     redirect("/acesso-negado");
   }
 
-  if (!adminUser) {
-    redirect("/acesso-negado");
-  }
-
-  return <>{children}</>;
+  return <AdminSidebarProvider>{children}</AdminSidebarProvider>;
 }

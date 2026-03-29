@@ -61,7 +61,7 @@ export default function AdminDashboardPage() {
         <div className="flex flex-1 flex-col">
           <Header />
 
-          <main className="flex-1 space-y-6 p-6">
+          <main className="flex-1 p-4 md:p-4 md: p-6">
             <PageTitle
               title="Painel administrativo"
               subtitle="Visão geral do voluntariado e das candidaturas"

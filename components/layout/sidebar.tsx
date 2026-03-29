@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   Home,
@@ -7,7 +9,10 @@ import {
   Settings,
   Users,
   Image as ImageIcon,
+  X,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useAdminSidebar } from "@/components/layout/admin-sidebar-context";
 
 const items = [
   { title: "Painel", href: "/admin", icon: Home },
@@ -20,29 +25,65 @@ const items = [
 ];
 
 export function Sidebar() {
+  const pathname = usePathname();
+  const { mobileOpen, closeMobile } = useAdminSidebar();
+
   return (
-    <aside className="hidden w-64 border-r border-zinc-200 bg-white md:flex md:flex-col">
-      <div className="border-b border-zinc-200 px-6 py-5">
-        <h2 className="text-xl font-bold text-zinc-900">Atitude</h2>
-        <p className="text-sm text-zinc-500">Projeto Social</p>
-      </div>
+    <>
+      {mobileOpen ? (
+        <button
+          type="button"
+          onClick={closeMobile}
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          aria-label="Fechar menu"
+        />
+      ) : null}
 
-      <nav className="flex flex-1 flex-col gap-1 p-4">
-        {items.map((item) => {
-          const Icon = item.icon;
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-zinc-200 bg-white transition-transform duration-200 md:static md:z-auto md:w-64 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
+      >
+        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-5">
+          <div>
+            <h2 className="text-xl font-bold text-zinc-900">Atitude</h2>
+            <p className="text-sm text-zinc-500">Projeto Social</p>
+          </div>
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100"
-            >
-              <Icon size={18} />
-              {item.title}
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
+          <button
+            type="button"
+            onClick={closeMobile}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-300 text-zinc-900 md:hidden"
+            aria-label="Fechar menu"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <nav className="flex flex-1 flex-col gap-1 p-4">
+          {items.map((item) => {
+            const Icon = item.icon;
+            const active =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={closeMobile}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                  active
+                    ? "bg-zinc-900 text-white"
+                    : "text-zinc-700 hover:bg-zinc-100"
+                }`}
+              >
+                <Icon size={18} />
+                {item.title}
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+    </>
   );
 }

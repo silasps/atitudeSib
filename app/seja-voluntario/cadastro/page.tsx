@@ -196,7 +196,7 @@ export default function CadastroVoluntarioPage() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50 p-6">
+    <main className="min-h-screen bg-zinc-50 p-4 md: p-6">
       <div className="mx-auto max-w-4xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Cadastro de voluntário</h1>
@@ -207,7 +207,7 @@ export default function CadastroVoluntarioPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
+          className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm"
         >
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700">
