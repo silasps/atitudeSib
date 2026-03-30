@@ -34,12 +34,9 @@ export default function FuncoesVoluntariadoPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="space-y-6">
       <div className="flex min-h-screen">
-        <Sidebar />
         <div className="flex flex-1 flex-col">
-          <Header />
-
           <main className="flex-1 p-4 md:p-4 md: p-6">
             <div className="flex items-start justify-between gap-4">
               <PageTitle

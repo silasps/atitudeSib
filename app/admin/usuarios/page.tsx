@@ -135,10 +135,7 @@ export default function UsuariosPage() {
   return (
     <div className="min-h-screen bg-zinc-50">
       <div className="flex min-h-screen">
-        <Sidebar />
         <div className="flex flex-1 flex-col">
-          <Header />
-
           <main className="flex-1 p-4 md:p-4 md: p-6">
             <div className="mx-auto max-w-6xl space-y-6">
               <PageTitle
@@ -146,7 +143,7 @@ export default function UsuariosPage() {
                 subtitle="Gerencie quem pode acessar a área administrativa"
               />
 
-              <div className="grid gap-4 md: p-6 xl:grid-cols-2">
+              <div className="space-y-6">
                 <section className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
                   <h2 className="text-lg font-semibold text-zinc-900">
                     Autorizar novo usuário

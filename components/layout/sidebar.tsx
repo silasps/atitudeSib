@@ -9,6 +9,8 @@ import {
   Settings,
   Users,
   Image as ImageIcon,
+  School,
+  GraduationCap,
   X,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -19,6 +21,8 @@ const items = [
   { title: "Funções", href: "/admin/funcoes-voluntariado", icon: BookOpen },
   { title: "Necessidades", href: "/admin/necessidades-voluntariado", icon: ClipboardList },
   { title: "Candidaturas", href: "/admin/candidaturas-voluntariado", icon: HeartHandshake },
+  { title: "Turmas", href: "/admin/turmas", icon: School },
+  { title: "Alunos", href: "/admin/alunos", icon: GraduationCap },
   { title: "Usuários", href: "/admin/usuarios", icon: Users },
   { title: "Galeria", href: "/admin/galeria", icon: ImageIcon },
   { title: "Configurações", href: "/admin/configuracoes", icon: Settings },

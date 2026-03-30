@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { PublicAccessButton } from "@/components/layout/public-access-button";
 
 type PublicHeaderProps = {
   projectName: string;
@@ -29,12 +30,19 @@ export function PublicHeader({
     setMobileOpen(false);
   }
 
+  function toggleMobile() {
+    setMobileOpen((prev) => !prev);
+  }
+
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6 md:py-5">
           <div className="min-w-0">
-            <Link href="/" className="block text-xl font-bold text-zinc-900 md:text-2xl">
+            <Link
+              href="/"
+              className="block text-xl font-bold text-zinc-900 md:text-2xl"
+            >
               {projectName}
             </Link>
             {projectSubtitle ? (
@@ -44,10 +52,11 @@ export function PublicHeader({
             ) : null}
           </div>
 
-          <nav className="hidden items-center gap-4 md: p-6 text-sm text-zinc-700 md:flex">
+          <nav className="hidden items-center gap-4 text-sm text-zinc-700 md:flex">
             {navItems.map((item) => {
               const active =
-                pathname === item.href || pathname.startsWith(`${item.href}/`);
+                pathname === item.href ||
+                (item.href !== "/" && pathname.startsWith(`${item.href}/`));
 
               return (
                 <Link
@@ -66,11 +75,13 @@ export function PublicHeader({
             >
               Seja voluntário
             </Link>
+
+            <PublicAccessButton />
           </nav>
 
           <button
             type="button"
-            onClick={() => setMobileOpen((prev) => !prev)}
+            onClick={toggleMobile}
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-300 text-zinc-900 md:hidden"
             aria-label="Abrir menu"
           >
@@ -91,7 +102,8 @@ export function PublicHeader({
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => {
                 const active =
-                  pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(`${item.href}/`));
 
                 return (
                   <Link
@@ -116,6 +128,10 @@ export function PublicHeader({
               >
                 Seja voluntário
               </Link>
+
+              <div className="mt-2">
+                <PublicAccessButton mobile onNavigate={closeMenu} />
+              </div>
             </nav>
           </div>
         </>

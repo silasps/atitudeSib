@@ -1,17 +1,16 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { AdminSidebarProvider } from "@/components/layout/admin-sidebar-context";
-import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { AdminSidebarProvider } from "@/components/layout/admin-sidebar-context";
+import { ProfessorSidebar } from "@/components/layout/professor-sidebar";
 
-export default async function AdminLayout({
+export default async function ProfessorLayout({
   children,
 }: {
   children: ReactNode;
 }) {
   const supabase = await createSupabaseServerClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -20,21 +19,10 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  const { data: adminUser, error } = await supabase
-    .from("admin_users")
-    .select("*")
-    .eq("id", user.id)
-    .eq("ativo", true)
-    .maybeSingle();
-
-  if (error || !adminUser) {
-    redirect("/acesso-negado");
-  }
-
   return (
     <AdminSidebarProvider>
       <div className="min-h-screen bg-zinc-50 md:flex">
-        <Sidebar />
+        <ProfessorSidebar />
 
         <div className="flex min-h-screen flex-1 flex-col">
           <Header />

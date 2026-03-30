@@ -59,12 +59,9 @@ export default function NecessidadesVoluntariadoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="space-y-6">
       <div className="flex min-h-screen">
-        <Sidebar />
         <div className="flex flex-1 flex-col">
-          <Header />
-
           <main className="flex-1 p-4 md:p-4 md: p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <PageTitle
