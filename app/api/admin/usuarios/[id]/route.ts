@@ -96,13 +96,13 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { email, nome, role, ativo, password } = body;
+    const { nome, role, ativo, password } = body;
 
-    if (!email || !role || typeof ativo !== "boolean") {
+    if (!role || typeof ativo !== "boolean") {
       return NextResponse.json(
         {
           success: false,
-          message: "E-mail, perfil e status precisam ser informados.",
+          message: "Perfil e status precisam ser informados.",
         },
         { status: 400 }
       );
@@ -115,16 +115,10 @@ export async function PATCH(
       );
     }
 
-    const authPayload: Record<string, string> = { email };
-
     if (typeof password === "string" && password.trim()) {
-      authPayload.password = password;
-    }
-
-    if (Object.keys(authPayload).length) {
       const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
         id,
-        authPayload
+        { password }
       );
 
       if (authError) {
@@ -138,8 +132,7 @@ export async function PATCH(
     const { error: updateError } = await supabaseAdmin
       .from("admin_users")
       .update({
-        email,
-        nome: nome || null,
+        nome: typeof nome === "string" ? nome : null,
         role,
         ativo,
       })

@@ -1,153 +1,274 @@
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
 import { PublicHeader } from "@/components/layout/public-header";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import HeroSlider, { HeroSlide } from "@/components/public/hero-slider";
+import StoryScroller from "@/components/public/story-scroller";
+
+type SiteConfig = {
+  project_name: string;
+  project_subtitle: string;
+  hero_title: string;
+  hero_subtitle: string;
+  hero_button_primary_text: string;
+  hero_button_primary_link: string;
+  hero_button_secondary_text: string;
+  hero_button_secondary_link: string;
+  hero_image_url: string;
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  about_title: string;
+  about_text: string;
+  work_title: string;
+  work_text: string;
+  contact_email: string;
+  contact_phone: string;
+  contact_whatsapp: string;
+};
+
+const defaultConfig: SiteConfig = {
+  project_name: "Atitude",
+  project_subtitle: "Projeto social e comunitário",
+  hero_title: "Transformando vidas com cuidado, educação e acolhimento.",
+  hero_subtitle:
+    "Conte histórias reais, conecte voluntários e mostre impacto para quem quer contribuir e investir.",
+  hero_button_primary_text: "Seja voluntário",
+  hero_button_primary_link: "/seja-voluntario",
+  hero_button_secondary_text: "Conheça o projeto",
+  hero_button_secondary_link: "/quem-somos",
+  hero_image_url: "",
+  primary_color: "#111827",
+  secondary_color: "#f4f4f5",
+  accent_color: "#0f766e",
+  about_title: "Nossa missão",
+  about_text:
+    "Cuidamos de crianças, famílias e cuidadores para gerar oportunidades reais de desenvolvimento por meio da educação e do acolhimento.",
+  work_title: "Impacto no território",
+  work_text:
+    "As nossas frentes entregam acolhimento, apoio pedagógico e presença comunitária com voluntários dedicados e parceiros engajados.",
+  contact_email: "",
+  contact_phone: "",
+  contact_whatsapp: "",
+};
+
+type GalleryItem = {
+  id: number;
+  image_url: string;
+  legenda: string | null;
+};
+
+function formatMetric(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function portraitStory(item: GalleryItem, fallbackHeadline: string, fallbackDescription: string) {
+  const rawText = item.legenda?.trim() ?? "";
+  const sentences = rawText
+    .split(".")
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  const title = sentences[0] || fallbackHeadline;
+  const description = sentences.slice(1).join(". ") || rawText || fallbackDescription;
+
+  return {
+    title,
+    description,
+  };
+}
 
 export default async function HomePage() {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("site_config")
-    .select("*")
-    .limit(1)
-    .single();
 
-  const config = data ?? {
-    project_name: "Atitude",
-    project_subtitle: "Projeto social e comunitário",
-    hero_title: "Transformando vidas por meio do cuidado e da educação.",
-    hero_subtitle: "Conheça o projeto e faça parte da nossa missão.",
-    hero_button_primary_text: "Seja voluntário",
-    hero_button_primary_link: "/seja-voluntario",
-    hero_button_secondary_text: "Quem somos",
-    hero_button_secondary_link: "/quem-somos",
-    hero_image_url: "",
-    primary_color: "#18181b",
-    secondary_color: "#f4f4f5",
-    accent_color: "#0f766e",
-    about_title: "Quem somos",
-    about_text: "",
-    work_title: "O que estamos fazendo",
-    work_text: "",
-    contact_email: "",
-    contact_phone: "",
-    contact_whatsapp: "",
-  };
+  const [
+    configResult,
+    galleryResult,
+    volunteerCountResult,
+    activeStudentsResult,
+    activeFunctionsResult,
+    openNeedsResult,
+  ] = await Promise.all([
+    supabase.from("site_config").select("*").limit(1).maybeSingle(),
+    supabase
+      .from("site_gallery")
+      .select("*")
+      .eq("ativo", true)
+      .order("created_at", { ascending: false })
+      .limit(8),
+    supabase
+      .from("candidaturas_voluntariado")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "aprovado"),
+    supabase
+      .from("alunos")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "ativo"),
+    supabase
+      .from("funcoes_voluntariado")
+      .select("id", { count: "exact", head: true })
+      .eq("ativo", true),
+    supabase
+      .from("necessidades_voluntariado")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "aberta"),
+  ]);
+
+  const config = (configResult.data as SiteConfig) ?? defaultConfig;
+  const gallery = (galleryResult.data ?? []) as GalleryItem[];
+
+  const heroSlides: HeroSlide[] = gallery.slice(0, 3).map((item) => ({
+    imageUrl: item.image_url,
+    caption: item.legenda ?? config.hero_subtitle,
+  }));
+
+  if (!heroSlides.length && config.hero_image_url) {
+    heroSlides.push({
+      imageUrl: config.hero_image_url,
+      caption: config.hero_subtitle,
+    });
+  }
+
+  const stats = [
+    {
+      label: "Voluntários ativos",
+      value: formatMetric(volunteerCountResult.count ?? 0),
+      detail: "Candidaturas aprovadas que já atuam com a gente",
+    },
+    {
+      label: "Pessoas atendidas",
+      value: formatMetric(activeStudentsResult.count ?? 0),
+      detail: "Alunos e famílias acompanhadas em turmas ativas",
+    },
+    {
+      label: "Frentes de trabalho",
+      value: formatMetric(activeFunctionsResult.count ?? 0),
+      detail: "Funções de voluntariado em andamento",
+    },
+    {
+      label: "Necessidades abertas",
+      value: formatMetric(openNeedsResult.count ?? 0),
+      detail: "Vagas em aberto para novos voluntários",
+    },
+  ];
+
+  const storyCards = gallery.slice(0, 4).map((item) => {
+    const segments = portraitStory(item, config.project_subtitle, config.work_text);
+    return {
+      id: item.id,
+      imageUrl: item.image_url,
+      title: segments.title,
+      description: segments.description,
+    };
+  });
 
   return (
-    <main className="min-h-screen bg-white" style={{ color: config.primary_color }}>
-      <PublicHeader
-        projectName={config.project_name}
-        projectSubtitle={config.project_subtitle}
+    <main className="bg-white text-zinc-900">
+      <PublicHeader projectName={config.project_name} projectSubtitle={config.project_subtitle} />
+
+      <HeroSlider
+        slides={heroSlides}
+        title={config.hero_title}
+        subtitle={config.hero_subtitle}
+        accentColor={config.accent_color}
+        primaryAction={{
+          label: config.hero_button_primary_text || "Seja voluntário",
+          href: config.hero_button_primary_link || "/seja-voluntario",
+        }}
+        secondaryAction={{
+          label: config.hero_button_secondary_text || "Conheça o projeto",
+          href: config.hero_button_secondary_link || "/quem-somos",
+        }}
       />
 
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          {config.hero_image_url ? (
-            <img
-              src={config.hero_image_url?.trim()}
-              alt="Imagem principal do projeto"
-              className="h-full w-full object-cover"
-            />
-          ) : null}
-          <div className="absolute inset-0 bg-black/45" />
-        </div>
+      <section className="bg-zinc-50 px-6 py-16">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex flex-col gap-2">
+            <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">Números que comprovam</p>
+            <h2 className="text-3xl font-bold text-zinc-900">Impacto em evidência</h2>
+            <p className="max-w-3xl text-sm text-zinc-600">{config.work_text}</p>
+          </div>
 
-        <div className="relative mx-auto max-w-7xl px-6 py-24 md:py-36">
-          <div className="max-w-3xl text-white">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] opacity-90">
-              {config.project_subtitle}
-            </p>
-
-            <h2 className="mt-4 text-4xl font-bold leading-tight md:text-6xl">
-              {config.hero_title}
-            </h2>
-
-            <p className="mt-6 max-w-2xl text-lg text-white/90">
-              {config.hero_subtitle}
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href={config.hero_button_primary_link || "/seja-voluntario"}
-                className="rounded-xl px-5 py-3 text-sm font-medium text-white"
-                style={{ backgroundColor: config.accent_color }}
+          <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm"
               >
-                {config.hero_button_primary_text || "Seja voluntário"}
-              </Link>
-
-              <Link
-                href={config.hero_button_secondary_link || "/quem-somos"}
-                className="rounded-xl border border-white/80 px-5 py-3 text-sm font-medium text-white"
-              >
-                {config.hero_button_secondary_text || "Conheça o projeto"}
-              </Link>
-            </div>
+                <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{stat.detail}</p>
+                <p className="mt-4 text-4xl font-semibold text-zinc-900">{stat.value}</p>
+                <p className="mt-2 text-sm text-zinc-600">{stat.label}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-6 py-16 md:grid-cols-2">
-        <div className="rounded-3xl p-8" style={{ backgroundColor: config.secondary_color }}>
-          <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
-            Institucional
-          </p>
-          <h3 className="mt-3 text-3xl font-bold">{config.about_title}</h3>
-          <p className="mt-4 leading-7 text-zinc-600">{config.about_text}</p>
-          <Link
-            href="/quem-somos"
-            className="mt-6 inline-flex rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
-          >
-            Saiba mais
-          </Link>
-        </div>
+      <section className="px-6 py-16">
+        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-2">
+          <article className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Missão da organização</p>
+            <h3 className="mt-3 text-3xl font-semibold text-zinc-900">{config.about_title}</h3>
+            <p className="mt-4 text-sm leading-relaxed text-zinc-600">
+              {config.about_text}
+            </p>
+          </article>
 
-        <div className="rounded-3xl border border-zinc-200 p-8">
-          <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
-            Atuação
-          </p>
-          <h3 className="mt-3 text-3xl font-bold">{config.work_title}</h3>
-          <p className="mt-4 leading-7 text-zinc-600">{config.work_text}</p>
-          <Link
-            href="/o-que-estamos-fazendo"
-            className="mt-6 inline-flex rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
-          >
-            Ver atuação
-          </Link>
+          <article className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Histórias de impacto</p>
+            <h3 className="mt-3 text-3xl font-semibold text-zinc-900">{config.work_title}</h3>
+            <p className="mt-4 text-sm leading-relaxed text-zinc-600">
+              Compartilhamos a presença cotidiana dos nossos voluntários, famílias e estudantes para mostrar
+              onde seu investimento chega.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href="/faca-parte"
+                className="rounded-full border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-900"
+              >
+                Conhecer programas
+              </Link>
+              <Link
+                href="/contato"
+                className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-semibold text-white"
+                style={{ backgroundColor: config.primary_color }}
+              >
+                Conversar com a equipe
+              </Link>
+            </div>
+          </article>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 pb-16">
-        <div className="rounded-3xl p-8 text-white" style={{ backgroundColor: config.primary_color }}>
-          <div className="grid gap-8 md:grid-cols-2">
-            <div>
-              <p className="text-sm uppercase tracking-wide text-white/70">
-                Faça parte
-              </p>
-              <h3 className="mt-3 text-3xl font-bold">
-                Quer servir com a gente?
-              </h3>
-              <p className="mt-4 text-white/80">
-                Veja as oportunidades abertas e envie sua candidatura como voluntário.
-              </p>
-            </div>
+      <StoryScroller
+        title={`Vivências do ${config.project_name}`}
+        subtitle="Galeria viva com fotos recentes e relatos curtos que aproximam você dos nossos voluntários e comunidades."
+        stories={storyCards}
+      />
 
-            <div className="flex items-center gap-3 md:justify-end">
-              <Link
-                href="/seja-voluntario"
-                className="rounded-xl px-5 py-3 text-sm font-medium text-white"
-                style={{ backgroundColor: config.accent_color }}
-              >
-                Ver oportunidades
-              </Link>
-
-              <Link
-                href="/faca-parte"
-                className="rounded-xl border border-white/60 px-5 py-3 text-sm font-medium text-white"
-              >
-                Saiba como participar
-              </Link>
-            </div>
+      <section className="bg-zinc-900 px-6 py-16 text-white">
+        <div className="mx-auto max-w-5xl text-center">
+          <p className="text-xs uppercase tracking-[0.4em] text-white/60">Investimento social</p>
+          <h3 className="mt-4 text-3xl font-semibold">Sinta o pulso do Atitude</h3>
+          <p className="mt-4 text-sm text-white/80">
+            Transparência e propósito em cada número. Mantemos investidores, parceiros e voluntários próximos com
+            relatórios humanizados, fotos atualizadas e painéis com as pessoas reais que são impactadas todos os dias.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/seja-voluntario"
+              className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-zinc-900"
+            >
+              Ver oportunidades
+            </Link>
+            <Link
+              href="/contato"
+              className="rounded-full border border-white/60 px-6 py-3 text-sm font-semibold text-white"
+            >
+              Agendar conversa
+            </Link>
           </div>
         </div>
       </section>

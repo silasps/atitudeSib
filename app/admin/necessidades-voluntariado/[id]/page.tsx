@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
 import { PageTitle } from "@/components/ui/page-title";
 import { supabase } from "@/lib/supabase";
 import type { FuncaoVoluntariado } from "@/types";

@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
 import { PageTitle } from "@/components/ui/page-title";
 import { supabase } from "@/lib/supabase";
 import type { FuncaoVoluntariado, NecessidadeVoluntariado } from "@/types";
@@ -128,47 +126,78 @@ export default function NecessidadesVoluntariadoPage() {
                   <Link
                     key={item.id}
                     href={`/admin/necessidades-voluntariado/${item.id}`}
-                    className="block rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm hover:shadow-md"
+                    className="group flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                   >
-                    <p className="text-sm text-zinc-500">
-                      {item.funcao?.nome ?? "Função não definida"}
-                    </p>
+                    <div>
+                      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        <span>
+                          {item.funcao?.nome ?? "Função não definida"}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 ${
+                            item.status === "aberta"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : item.status === "fechada"
+                              ? "bg-zinc-200 text-zinc-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+                      <h3 className="mt-2 text-lg font-semibold text-zinc-900">
+                        {item.titulo_publico}
+                      </h3>
 
-                    <h3 className="mt-2 text-lg font-semibold text-zinc-900">
-                      {item.titulo_publico}
-                    </h3>
+                      <p className="mt-3 text-sm leading-6 text-zinc-600 line-clamp-3">
+                        {item.descricao || "Sem descrição cadastrada."}
+                      </p>
+                    </div>
 
-                    <p className="mt-3 text-sm leading-6 text-zinc-600">
-                      {item.descricao || "Sem descrição cadastrada."}
-                    </p>
-
-                    <div className="mt-4 space-y-2 text-sm text-zinc-600">
-                      <p>
-                        <span className="font-medium text-zinc-900">Status:</span>{" "}
-                        {item.status}
-                      </p>
-                      <p>
-                        <span className="font-medium text-zinc-900">Total:</span>{" "}
-                        {item.quantidade_total}
-                      </p>
-                      <p>
-                        <span className="font-medium text-zinc-900">Aprovados:</span>{" "}
-                        {item.quantidade_aprovada}
-                      </p>
-                      <p>
-                        <span className="font-medium text-zinc-900">Restantes:</span>{" "}
-                        {getVagasRestantes(item)}
-                      </p>
-                      <p>
-                        <span className="font-medium text-zinc-900">Pública:</span>{" "}
-                        {item.exibir_publicamente ? "Sim" : "Não"}
-                      </p>
-                      <p>
-                        <span className="font-medium text-zinc-900">Data limite:</span>{" "}
-                        {item.data_limite_inscricao_em
-                            ? new Date(item.data_limite_inscricao_em).toLocaleString("pt-BR")
+                    <div className="mt-4 grid gap-2 text-xs font-semibold text-zinc-500 sm:grid-cols-2">
+                      <span>
+                        Total:{" "}
+                        <span className="text-zinc-900">
+                          {item.quantidade_total}
+                        </span>
+                      </span>
+                      <span>
+                        Aprovados:{" "}
+                        <span className="text-zinc-900">
+                          {item.quantidade_aprovada}
+                        </span>
+                      </span>
+                      <span>
+                        Restantes:{" "}
+                        <span className="text-zinc-900">
+                          {getVagasRestantes(item)}
+                        </span>
+                      </span>
+                      <span>
+                        Pública:{" "}
+                        <span className="text-zinc-900">
+                          {item.exibir_publicamente ? "Sim" : "Não"}
+                        </span>
+                      </span>
+                      <span className="sm:col-span-2">
+                        Data limite:{" "}
+                        <span className="text-zinc-900">
+                          {item.data_limite_inscricao_em
+                            ? new Date(item.data_limite_inscricao_em).toLocaleString(
+                                "pt-BR"
+                              )
                             : "Não informada"}
-                        </p>
+                        </span>
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between text-sm text-zinc-500">
+                      <span className="text-xs uppercase tracking-wide text-zinc-400">
+                        Clique para visualizar
+                      </span>
+                      <span className="text-sm font-semibold text-zinc-900 transition group-hover:text-zinc-500">
+                        Visualizar →
+                      </span>
                     </div>
                   </Link>
                 ))}

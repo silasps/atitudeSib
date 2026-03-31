@@ -8,13 +8,19 @@ import UsuarioEditor from "./usuario-editor";
 export default async function UsuarioDetalhePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const supabase = await createSupabaseServerClient();
+
+  if (!id) {
+    notFound();
+  }
+
   const { data: usuario, error } = await supabase
     .from("admin_users")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .maybeSingle();
 
   if (error) {

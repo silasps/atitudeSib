@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
+import { useEffect, useRef, useState } from "react";
 import { PageTitle } from "@/components/ui/page-title";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
@@ -16,6 +14,20 @@ type GalleryItem = {
   created_by_user_id: string | null;
   created_by_user_email: string | null;
 };
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "Data não informada";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Data inválida";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function FieldHelp({ children }: { children: React.ReactNode }) {
+  return <p className="text-xs text-zinc-500">{children}</p>;
+}
 
 export default function GaleriaPage() {
   const supabase = createSupabaseBrowserClient();
@@ -32,6 +44,7 @@ export default function GaleriaPage() {
   const [editingItem, setEditingItem] = useState<GalleryItem | null>(null);
   const [editingLegenda, setEditingLegenda] = useState("");
   const [modalLoading, setModalLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   async function fetchGallery() {
     const { data, error } = await supabase
@@ -117,8 +130,15 @@ export default function GaleriaPage() {
 
     setLegenda("");
     setMessage("Imagem enviada com sucesso.");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     await fetchGallery();
     setUploading(false);
+  }
+
+  function openFileDialog() {
+    fileInputRef.current?.click();
   }
 
   async function toggleAtivo(item: GalleryItem) {
@@ -136,58 +156,18 @@ export default function GaleriaPage() {
   }
 
   async function handleSaveEdit() {
-  if (!editingItem) return;
+    if (!editingItem) return;
 
-  setModalLoading(true);
-  setMessage("");
+    setModalLoading(true);
+    setMessage("");
 
-  const { error } = await supabase
-    .from("site_gallery")
-    .update({ legenda: editingLegenda || null })
-    .eq("id", editingItem.id);
-
-  if (error) {
-    setMessage(`Erro ao atualizar imagem: ${error.message}`);
-    setModalLoading(false);
-    return;
-  }
-
-  setEditingItem(null);
-  setEditingLegenda("");
-  await fetchGallery();
-  setModalLoading(false);
-}
-
-async function handleDeleteImage() {
-  if (!editingItem) return;
-
-  setModalLoading(true);
-  setMessage("");
-
-  try {
-    const url = new URL(editingItem.image_url);
-    const pathParts = url.pathname.split("/storage/v1/object/public/site-images/");
-    const storagePath = pathParts[1];
-
-    if (storagePath) {
-      const { error: storageError } = await supabase.storage
-        .from("site-images")
-        .remove([storagePath]);
-
-      if (storageError) {
-        setMessage(`Erro ao excluir do storage: ${storageError.message}`);
-        setModalLoading(false);
-        return;
-      }
-    }
-
-    const { error: deleteError } = await supabase
+    const { error } = await supabase
       .from("site_gallery")
-      .delete()
+      .update({ legenda: editingLegenda || null })
       .eq("id", editingItem.id);
 
-    if (deleteError) {
-      setMessage(`Erro ao excluir imagem: ${deleteError.message}`);
+    if (error) {
+      setMessage(`Erro ao atualizar imagem: ${error.message}`);
       setModalLoading(false);
       return;
     }
@@ -196,11 +176,51 @@ async function handleDeleteImage() {
     setEditingLegenda("");
     await fetchGallery();
     setModalLoading(false);
-  } catch {
-    setMessage("Não foi possível interpretar a URL da imagem.");
-    setModalLoading(false);
   }
-}
+
+  async function handleDeleteImage() {
+    if (!editingItem) return;
+
+    setModalLoading(true);
+    setMessage("");
+
+    try {
+      const url = new URL(editingItem.image_url);
+      const pathParts = url.pathname.split("/storage/v1/object/public/site-images/");
+      const storagePath = pathParts[1];
+
+      if (storagePath) {
+        const { error: storageError } = await supabase.storage
+          .from("site-images")
+          .remove([storagePath]);
+
+        if (storageError) {
+          setMessage(`Erro ao excluir do storage: ${storageError.message}`);
+          setModalLoading(false);
+          return;
+        }
+      }
+
+      const { error: deleteError } = await supabase
+        .from("site_gallery")
+        .delete()
+        .eq("id", editingItem.id);
+
+      if (deleteError) {
+        setMessage(`Erro ao excluir imagem: ${deleteError.message}`);
+        setModalLoading(false);
+        return;
+      }
+
+      setEditingItem(null);
+      setEditingLegenda("");
+      await fetchGallery();
+      setModalLoading(false);
+    } catch {
+      setMessage("Não foi possível interpretar a URL da imagem.");
+      setModalLoading(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -213,34 +233,59 @@ async function handleDeleteImage() {
                 subtitle="Envie imagens para usar nas páginas públicas do projeto"
               />
 
-              <section className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-zinc-900">
-                  Enviar nova imagem
-                </h2>
+              <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">
+                    Upload rápido
+                  </p>
+                  <h2 className="text-lg font-semibold text-zinc-900">
+                    Enviar nova imagem
+                  </h2>
+                </div>
 
-                <div className="mt-4 grid gap-4 md:grid-cols-[1fr_auto]">
-                  <input
-                    type="text"
-                    placeholder="Legenda da imagem (opcional)"
-                    value={legenda}
-                    onChange={(e) => setLegenda(e.target.value)}
-                    className="rounded-xl border border-zinc-300 px-4 py-3"
-                  />
+                <div className="mt-6 grid gap-6 lg:grid-cols-[2fr_1.1fr]">
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-zinc-700">
+                      Legenda (opcional)
+                    </label>
+                    <textarea
+                      placeholder="Descreva em uma frase o que a imagem mostra."
+                      value={legenda}
+                      onChange={(e) => setLegenda(e.target.value)}
+                      rows={3}
+                      className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm text-zinc-700"
+                    />
+                    <FieldHelp>Essa legenda vira o texto dos slides.</FieldHelp>
+                  </div>
 
-                  <label className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-zinc-900 px-5 py-3 text-sm font-medium text-white">
-                    {uploading ? "Enviando..." : "Selecionar imagem"}
+                  <div className="space-y-3 rounded-3xl border border-dashed border-zinc-200 p-4 text-center">
+                    <p className="text-sm text-zinc-500">
+                      Envie JPG ou PNG com até 5 MB.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={openFileDialog}
+                      disabled={uploading}
+                      className="w-full rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                      {uploading ? "Enviando..." : "Selecionar imagem"}
+                    </button>
                     <input
                       type="file"
+                      ref={fileInputRef}
                       accept="image/*"
                       onChange={handleUpload}
                       className="hidden"
                       disabled={uploading}
                     />
-                  </label>
+                    <p className="text-xs text-zinc-500">
+                      Mantenha as imagens atualizadas para contar novas histórias.
+                    </p>
+                  </div>
                 </div>
 
                 {message ? (
-                  <div className="mt-4 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-700">
+                  <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
                     {message}
                   </div>
                 ) : null}
@@ -271,16 +316,20 @@ async function handleDeleteImage() {
                         />
 
                         <div className="space-y-3 p-4">
-                          <p className="text-sm font-medium text-zinc-900">
-                            {item.legenda || "Sem legenda"}
-                          </p>
-
-                          <p className="break-all text-xs text-zinc-500">
-                            {item.image_url}
+                          <p className="text-sm font-semibold text-zinc-900">
+                            {item.legenda || "Sem legenda registrada"}
                           </p>
 
                           <p className="text-xs text-zinc-500">
-                            Enviado por: {item.created_by_user_email || "Não informado"}
+                            Arquivo: {item.file_name || "Link direto enviado"}
+                          </p>
+
+                          <p className="text-xs text-zinc-500">
+                            Enviado em {formatDateTime(item.created_at)}
+                          </p>
+
+                          <p className="text-xs text-zinc-500">
+                            Por: {item.created_by_user_email || "Não informado"}
                           </p>
 
                           <div className="flex flex-wrap items-center justify-between gap-2">

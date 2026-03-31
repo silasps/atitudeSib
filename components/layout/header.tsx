@@ -4,11 +4,29 @@ import { Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { useAdminSidebar } from "@/components/layout/admin-sidebar-context";
+import { useEffect, useRef, useState } from "react";
 
 export function Header() {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const { toggleMobile } = useAdminSidebar();
+  const [hidden, setHidden] = useState(false);
+  const lastScroll = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const current = window.scrollY;
+      if (current > lastScroll.current && current > 20) {
+        setHidden(true);
+      } else {
+        setHidden(false);
+      }
+      lastScroll.current = current;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -17,7 +35,10 @@ export function Header() {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-zinc-200 bg-white px-4 md:px-6">
+    <header
+      className={`sticky top-0 z-40 flex h-16 items-center justify-between border-b border-zinc-200 bg-white px-4 py-2 transition-transform duration-300 ease-out ${hidden ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
+        }`}
+    >
       <div className="flex items-center gap-3">
         <button
           type="button"

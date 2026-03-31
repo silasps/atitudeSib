@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AdminUser, AdminUserRole } from "@/types/admin-user";
 
 type Props = {
@@ -26,8 +26,20 @@ export default function UsuarioEditor({ initialUser }: Props) {
     password: "",
   });
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [changeSummary, setChangeSummary] = useState<string[]>([]);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+      }
+    };
+  }, []);
 
   function handleInputChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -41,13 +53,36 @@ export default function UsuarioEditor({ initialUser }: Props) {
     setForm((prev) => ({ ...prev, [name]: checked }));
   }
 
+  function buildChangeSummary() {
+    const summary: string[] = [];
+    const normalizedName = form.nome.trim();
+    const initialName = initialUser.nome || "";
+
+    if (normalizedName !== initialName) {
+      summary.push("Nome alterado com sucesso.");
+    }
+
+    if (form.role !== initialUser.role) {
+      summary.push("Perfil alterado com sucesso.");
+    }
+
+    if (form.ativo !== initialUser.ativo) {
+      summary.push("Status alterado com sucesso.");
+    }
+
+    if (form.password.trim()) {
+      summary.push("Senha temporária atualizada com sucesso.");
+    }
+
+    return summary.length ? summary : ["Nenhuma alteração detectada."];
+  }
+
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setMessage("");
 
     const payload: Record<string, unknown> = {
-      email: form.email.trim().toLowerCase(),
       nome: form.nome.trim() || null,
       role: form.role,
       ativo: form.ativo,
@@ -71,20 +106,22 @@ export default function UsuarioEditor({ initialUser }: Props) {
       return;
     }
 
-    setMessage("Atualizado com sucesso.");
+    const summary = buildChangeSummary();
+    setChangeSummary(summary);
+    setShowSuccessModal(true);
+    if (successTimerRef.current) {
+      clearTimeout(successTimerRef.current);
+    }
+    successTimerRef.current = setTimeout(() => {
+      setShowSuccessModal(false);
+    }, 2000);
+
     setForm((prev) => ({ ...prev, password: "" }));
     setSaving(false);
     router.refresh();
   }
 
-  async function handleDelete() {
-    const confirmDelete = window.confirm(
-      "Tem certeza que deseja remover este usuário do painel? Isso também removerá o Auth correspondente."
-    );
-    if (!confirmDelete) {
-      return;
-    }
-
+  async function confirmDelete() {
     setDeleting(true);
     setMessage("");
 
@@ -97,10 +134,15 @@ export default function UsuarioEditor({ initialUser }: Props) {
     if (!response.ok) {
       setMessage(data.message || "Erro ao excluir usuário.");
       setDeleting(false);
+      setShowConfirmDelete(false);
       return;
     }
 
     router.push("/admin/usuarios");
+  }
+
+  function handleDeleteClick() {
+    setShowConfirmDelete(true);
   }
 
   return (
@@ -138,10 +180,12 @@ export default function UsuarioEditor({ initialUser }: Props) {
               name="email"
               type="email"
               value={form.email}
-              onChange={handleInputChange}
-              required
-              className="w-full rounded-xl border border-zinc-300 px-4 py-3"
+              readOnly
+              className="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-zinc-500 outline-none"
             />
+            <p className="mt-2 text-xs text-zinc-500">
+              O e-mail está vinculado ao Supabase Auth e não pode ser alterado por aqui.
+            </p>
           </div>
 
           <div>
@@ -192,7 +236,7 @@ export default function UsuarioEditor({ initialUser }: Props) {
               onChange={handleCheckboxChange}
             />
             <span className="text-sm text-zinc-700">
-              Usuário autorizado para acessar o painel
+              Usuário autorizado para acessar o painel referente ao seu perfil e às atribuições definidas
             </span>
           </label>
 
@@ -213,7 +257,7 @@ export default function UsuarioEditor({ initialUser }: Props) {
 
             <button
               type="button"
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               disabled={deleting}
               className="w-full rounded-xl border border-red-300 px-5 py-3 text-sm font-semibold text-red-700 disabled:opacity-60 md:w-auto"
             >
@@ -222,6 +266,62 @@ export default function UsuarioEditor({ initialUser }: Props) {
           </div>
         </form>
       </div>
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-sm rounded-3xl border border-zinc-200 bg-white p-6 text-center shadow-xl">
+            <p className="text-lg font-semibold text-zinc-900">
+              Alterações realizadas com sucesso!
+            </p>
+            <div className="mt-4 space-y-1 text-sm text-zinc-600">
+              {changeSummary.map((detail, index) => (
+                <p key={`${detail}-${index}`}>{detail}</p>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSuccessModal(false)}
+              className="mt-6 w-full rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showConfirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-lg rounded-3xl border border-zinc-200 bg-white p-6 text-left shadow-xl">
+            <p className="text-sm font-semibold text-zinc-900">
+              Tem certeza que deseja remover{" "}
+              <span className="font-semibold text-zinc-900">
+                {initialUser.nome || initialUser.email}
+              </span>{" "}
+              ({initialUser.email}) do sistema?
+            </p>
+            <p className="mt-2 text-sm text-zinc-500">
+              Essa ação remove o acesso no Supabase Auth e a autorização no painel.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 md:flex-row md:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowConfirmDelete(false)}
+                className="w-full rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-900 md:w-auto"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="w-full rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60 md:w-auto"
+              >
+                {deleting ? "Removendo..." : "Confirmar remoção"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
