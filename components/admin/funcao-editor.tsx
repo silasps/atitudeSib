@@ -21,10 +21,17 @@ export default function FuncaoEditor({ initialData }: Props) {
   function handleChange(
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) {
-    const { name, value, type, checked } = event.target;
+    const target = event.target;
+    const { name, value } = target;
+    const inputTarget =
+      target instanceof HTMLInputElement ? target : undefined;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]:
+        inputTarget && inputTarget.type === "checkbox"
+          ? inputTarget.checked
+          : value,
     }));
   }
 
