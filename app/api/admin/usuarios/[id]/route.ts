@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
@@ -64,9 +64,10 @@ async function assertAdminUser(supabaseAdmin: ReturnType<typeof createClient>, u
 }
 
 export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const context = await getSupabaseContext();
 
@@ -75,7 +76,7 @@ export async function PATCH(
     }
 
     const { supabaseAdmin } = context;
-    const validation = await assertAdminUser(supabaseAdmin, params.id);
+    const validation = await assertAdminUser(supabaseAdmin, id);
 
     if ("error" in validation && validation.error) {
       return NextResponse.json(
@@ -119,7 +120,7 @@ export async function PATCH(
 
     if (Object.keys(authPayload).length) {
       const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
-        params.id,
+        id,
         authPayload
       );
 
@@ -139,7 +140,7 @@ export async function PATCH(
         role,
         ativo,
       })
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (updateError) {
       return NextResponse.json(
@@ -157,9 +158,10 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _: Request,
-  { params }: { params: { id: string } }
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const context = await getSupabaseContext();
 
@@ -169,12 +171,12 @@ export async function DELETE(
 
     const { supabaseAdmin } = context;
 
-    await supabaseAdmin.auth.admin.deleteUser(params.id);
+    await supabaseAdmin.auth.admin.deleteUser(id);
 
     const { error: deleteError } = await supabaseAdmin
       .from("admin_users")
       .delete()
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (deleteError) {
       return NextResponse.json(
