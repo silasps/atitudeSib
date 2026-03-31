@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     const body = await req.json();
-    const { email, password, nome, role } = body;
+    const { email, password, nome, role, ativo } = body;
 
     if (!email || !password || !role) {
       return NextResponse.json(
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
           email,
           nome: nome || null,
           role,
-          ativo: true,
+          ativo: typeof ativo === "boolean" ? ativo : true,
           created_by_user_id: currentUser.id,
           created_by_user_email: currentUser.email ?? null,
         },

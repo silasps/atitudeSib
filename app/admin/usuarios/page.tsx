@@ -1,36 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
+import Link from "next/link";
 import { PageTitle } from "@/components/ui/page-title";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
-
-type AdminUser = {
-  id: string;
-  email: string;
-  role: string;
-  nome: string | null;
-  ativo: boolean;
-  created_at: string;
-  created_by_user_id: string | null;
-  created_by_user_email: string | null;
-};
+import type { AdminUser, AdminUserRole } from "@/types/admin-user";
 
 type FormDataType = {
-  id: string;
   email: string;
   nome: string;
-  role: string;
+  role: AdminUserRole;
   ativo: boolean;
+  password: string;
 };
 
 const emptyForm: FormDataType = {
-  id: "",
   email: "",
   nome: "",
   role: "admin",
   ativo: true,
+  password: "",
 };
 
 function formatDateTime(dateString: string) {
@@ -91,17 +80,23 @@ export default function UsuariosPage() {
     setMessage("");
 
     const payload = {
-      id: formData.id.trim(),
       email: formData.email.trim().toLowerCase(),
       nome: formData.nome.trim() || null,
       role: formData.role,
+      password: formData.password,
       ativo: formData.ativo,
     };
 
-    const { error } = await supabase.from("admin_users").insert([payload]);
+    const response = await fetch("/api/admin/create-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-    if (error) {
-      setMessage(`Erro ao cadastrar usuário: ${error.message}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      setMessage(data.message || "Erro ao cadastrar usuário.");
       setSaving(false);
       return;
     }
@@ -112,31 +107,11 @@ export default function UsuariosPage() {
     setSaving(false);
   }
 
-  async function toggleAtivo(user: AdminUser) {
-    const { error } = await supabase
-      .from("admin_users")
-      .update({ ativo: !user.ativo })
-      .eq("id", user.id);
-
-    if (error) {
-      setMessage(`Erro ao atualizar usuário: ${error.message}`);
-      return;
-    }
-
-    setMessage(
-      !user.ativo
-        ? "Usuário ativado com sucesso."
-        : "Usuário desativado com sucesso."
-    );
-
-    await fetchUsuarios();
-  }
-
   return (
     <div className="min-h-screen bg-zinc-50">
       <div className="flex min-h-screen">
         <div className="flex flex-1 flex-col">
-          <main className="flex-1 p-4 md:p-4 md: p-6">
+          <main className="flex-1 p-4 md:p-6">
             <div className="mx-auto max-w-6xl space-y-6">
               <PageTitle
                 title="Usuários do painel"
@@ -144,28 +119,15 @@ export default function UsuariosPage() {
               />
 
               <div className="space-y-6">
-                <section className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
+                <section className="rounded-2xl border border-zinc-200 bg-white p-4 md:p-6 shadow-sm">
                   <h2 className="text-lg font-semibold text-zinc-900">
                     Autorizar novo usuário
                   </h2>
                   <p className="mt-1 text-sm text-zinc-500">
-                    Este cadastro libera o acesso ao painel para um usuário já criado no Supabase Auth.
+                    Ao autorizar, um usuário será criado no Supabase Auth com as credenciais fornecidas e já terá permissão no painel.
                   </p>
 
                   <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        ID do usuário no Auth
-                      </label>
-                      <input
-                        name="id"
-                        value={formData.id}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full rounded-xl border border-zinc-300 px-4 py-3"
-                      />
-                    </div>
-
                     <div>
                       <label className="mb-1 block text-sm font-medium text-zinc-700">
                         E-mail
@@ -188,6 +150,20 @@ export default function UsuariosPage() {
                         name="nome"
                         value={formData.nome}
                         onChange={handleInputChange}
+                        className="w-full rounded-xl border border-zinc-300 px-4 py-3"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-zinc-700">
+                        Senha temporária
+                      </label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        required
                         className="w-full rounded-xl border border-zinc-300 px-4 py-3"
                       />
                     </div>
@@ -219,6 +195,10 @@ export default function UsuariosPage() {
                       </span>
                     </label>
 
+                    <p className="text-sm text-zinc-500">
+                      Ao cadastrar, o Supabase Auth criará o usuário automaticamente com a senha temporária informada.
+                    </p>
+
                     {message ? (
                       <div className="rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-700">
                         {message}
@@ -237,12 +217,10 @@ export default function UsuariosPage() {
                   </form>
                 </section>
 
-                <section className="rounded-2xl border border-zinc-200 bg-white p-4 md: p-6 shadow-sm">
-                  <h2 className="text-lg font-semibold text-zinc-900">
-                    Usuários autorizados
-                  </h2>
+                <section className="rounded-2xl border border-zinc-200 bg-white p-4 md:p-6 shadow-sm">
+                  <h2 className="text-lg font-semibold text-zinc-900">Usuários autorizados</h2>
 
-                  <div className="mt-6 space-y-4">
+                  <div className="mt-6 space-y-3">
                     {loading ? (
                       <div className="rounded-xl bg-zinc-50 p-4 text-sm text-zinc-600">
                         Carregando usuários...
@@ -255,48 +233,36 @@ export default function UsuariosPage() {
                       usuarios.map((user) => (
                         <div
                           key={user.id}
-                          className="rounded-2xl border border-zinc-200 p-4"
+                          className="flex flex-col gap-3 rounded-2xl border border-zinc-200 p-4 shadow-sm md:flex-row md:items-center md:justify-between"
                         >
-                          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                            <div className="space-y-1">
-                              <p className="font-semibold text-zinc-900">
-                                {user.nome || "Sem nome informado"}
-                              </p>
-                              <p className="text-sm text-zinc-600">{user.email}</p>
-                              <p className="text-xs text-zinc-500">
-                                ID: {user.id}
-                              </p>
-                              <p className="text-sm text-zinc-600">
+                          <div>
+                            <p className="font-semibold text-zinc-900">
+                              {user.nome || "Sem nome informado"}
+                            </p>
+                            <p className="text-sm text-zinc-600">{user.email}</p>
+                            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                              <span className="rounded-full bg-zinc-100 px-2 py-1 text-zinc-700">
                                 Perfil: {user.role}
-                              </p>
-                              <p className="text-sm text-zinc-600">
-                                Criado por: {user.created_by_user_email || "Não informado"}
-                                </p>
-                              <p className="text-sm text-zinc-600">
-                                Criado em: {formatDateTime(user.created_at)}
-                              </p>
-                            </div>
-
-                            <div className="flex items-center gap-3">
+                              </span>
                               <span
-                                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                                className={`rounded-full px-2 py-1 font-semibold ${
                                   user.ativo
-                                    ? "bg-green-100 text-green-700"
+                                    ? "bg-emerald-100 text-emerald-700"
                                     : "bg-zinc-200 text-zinc-700"
                                 }`}
                               >
                                 {user.ativo ? "Ativo" : "Inativo"}
                               </span>
-
-                              <button
-                                type="button"
-                                onClick={() => toggleAtivo(user)}
-                                className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
-                              >
-                                {user.ativo ? "Desativar" : "Ativar"}
-                              </button>
+                              <span>Criado em: {formatDateTime(user.created_at)}</span>
                             </div>
                           </div>
+
+                          <Link
+                            href={`/admin/usuarios/${user.id}`}
+                            className="inline-flex items-center justify-center rounded-2xl border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:border-zinc-900"
+                          >
+                            Editar
+                          </Link>
                         </div>
                       ))
                     )}

@@ -18,18 +18,63 @@ export default function LoginPage() {
     setLoading(true);
     setMessage("");
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
+    if (signInError) {
       setMessage("Não foi possível entrar. Verifique e-mail e senha.");
       setLoading(false);
       return;
     }
 
-    router.push("/admin");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setMessage("Não foi possível confirmar sua conta.");
+      setLoading(false);
+      return;
+    }
+
+    const { data: adminUser, error: adminError } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("id", user.id)
+      .eq("ativo", true)
+      .maybeSingle();
+
+    if (adminError) {
+      setMessage("Não foi possível verificar sua autorização.");
+      setLoading(false);
+      return;
+    }
+
+    let destination = "/acesso-negado";
+
+    if (adminUser) {
+      destination = "/admin";
+    } else {
+      const { data: turmas, error: turmasError } = await supabase
+        .from("turmas")
+        .select("id")
+        .eq("professor_user_id", user.id)
+        .limit(1);
+
+      if (turmasError) {
+        setMessage("Não foi possível verificar sua autorização.");
+        setLoading(false);
+        return;
+      }
+
+      if (turmas?.length) {
+        destination = "/professor/turmas";
+      }
+    }
+
+    router.push(destination);
     router.refresh();
   }
 
