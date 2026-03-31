@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
@@ -45,7 +45,10 @@ async function getSupabaseContext() {
   return { currentUser, supabaseAdmin };
 }
 
-async function assertAdminUser(supabaseAdmin: ReturnType<typeof createClient>, userId: string) {
+async function assertAdminUser(
+  supabaseAdmin: SupabaseClient<any, "public", "public", any, any>,
+  userId: string
+) {
   const { data: adminUser, error } = await supabaseAdmin
     .from("admin_users")
     .select("*")
