@@ -12,7 +12,7 @@ export default async function UsuarioDetalhePage({
 }) {
   const supabase = await createSupabaseServerClient();
   const { data: usuario, error } = await supabase
-    .from<AdminUser>("admin_users")
+    .from("admin_users")
     .select("*")
     .eq("id", params.id)
     .maybeSingle();
