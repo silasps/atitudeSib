@@ -1,285 +1,252 @@
-import Link from "next/link";
 import { PublicHeader } from "@/components/layout/public-header";
 import { PublicFooter } from "@/components/layout/public-footer";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import HeroSlider, { HeroSlide } from "@/components/public/hero-slider";
-import StoryScroller from "@/components/public/story-scroller";
 
-type SiteConfig = {
-  project_name: string;
-  project_subtitle: string;
-  hero_title: string;
-  hero_subtitle: string;
-  hero_button_primary_text: string;
-  hero_button_primary_link: string;
-  hero_button_secondary_text: string;
-  hero_button_secondary_link: string;
-  hero_image_url: string;
-  primary_color: string;
-  secondary_color: string;
-  accent_color: string;
-  about_title: string;
-  about_text: string;
-  work_title: string;
-  work_text: string;
-  contact_email: string;
-  contact_phone: string;
-  contact_whatsapp: string;
-};
+const projectsInProgress = [
+  {
+    title: "Artesanato",
+    description:
+      "Aulas semanais com crochê e bordado para cerca de 10 idosos, criando renda extra e interação social.",
+  },
+  {
+    title: "Pilates",
+    description:
+      "Turmas aos sábados que fortalecem o corpo e reduzem dores, beneficiando quem busca qualidade de vida.",
+  },
+  {
+    title: "Balé",
+    description:
+      "Três turmas para crianças de 3 a 12 anos que trabalham disciplina, físico e cidadania.",
+  },
+  {
+    title: "Jiu-Jitsu",
+    description:
+      "Aulas para crianças e adolescentes em situação de risco, ensinando disciplina, respeito e autoconfiança.",
+  },
+];
 
-const defaultConfig: SiteConfig = {
-  project_name: "Atitude",
-  project_subtitle: "Projeto social e comunitário",
-  hero_title: "Transformando vidas com cuidado, educação e acolhimento.",
-  hero_subtitle:
-    "Conte histórias reais, conecte voluntários e mostre impacto para quem quer contribuir e investir.",
-  hero_button_primary_text: "Seja voluntário",
-  hero_button_primary_link: "/seja-voluntario",
-  hero_button_secondary_text: "Conheça o projeto",
-  hero_button_secondary_link: "/quem-somos",
-  hero_image_url: "",
-  primary_color: "#111827",
-  secondary_color: "#f4f4f5",
-  accent_color: "#0f766e",
-  about_title: "Nossa missão",
-  about_text:
-    "Cuidamos de crianças, famílias e cuidadores para gerar oportunidades reais de desenvolvimento por meio da educação e do acolhimento.",
-  work_title: "Impacto no território",
-  work_text:
-    "As nossas frentes entregam acolhimento, apoio pedagógico e presença comunitária com voluntários dedicados e parceiros engajados.",
-  contact_email: "",
-  contact_phone: "",
-  contact_whatsapp: "",
-};
+const upcomingProjects = [
+  {
+    title: "Computação",
+    description:
+      "Aulas de informática básica para alfabetização tecnológica, criatividade e concentração.",
+  },
+  {
+    title: "Violão e teoria musical",
+    description:
+      "O som como ferramenta de desenvolvimento cognitivo, emocional e social para crianças.",
+  },
+];
 
-type GalleryItem = {
-  id: number;
-  image_url: string;
-  legenda: string | null;
-};
+const resources = [
+  "Educadores sociais com metodologia pedagógica atualizada",
+  "Material didático e específico para cada projeto",
+  "Lanches e apoio alimentar durante as atividades",
+  "Materiais de limpeza e higiene para manter o espaço saudável",
+];
 
-function formatMetric(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+const structureItems = [
+  "Materiais pedagógicos e insumos impressos",
+  "Equipamentos esportivos, musicais e de artesanato",
+  "Ambiente de apoio, higiene e alimentação para participantes",
+  "Voluntariado capacitado e equipe administrativa atuando 20h semanais",
+];
 
-function portraitStory(item: GalleryItem, fallbackHeadline: string, fallbackDescription: string) {
-  const rawText = item.legenda?.trim() ?? "";
-  const sentences = rawText
-    .split(".")
-    .map((sentence) => sentence.trim())
-    .filter(Boolean);
-
-  const title = sentences[0] || fallbackHeadline;
-  const description = sentences.slice(1).join(". ") || rawText || fallbackDescription;
-
-  return {
-    title,
-    description,
-  };
-}
-
-export default async function HomePage() {
-  const supabase = await createSupabaseServerClient();
-
-  const [
-    configResult,
-    galleryResult,
-    volunteerCountResult,
-    activeStudentsResult,
-    activeFunctionsResult,
-    openNeedsResult,
-  ] = await Promise.all([
-    supabase.from("site_config").select("*").limit(1).maybeSingle(),
-    supabase
-      .from("site_gallery")
-      .select("*")
-      .eq("ativo", true)
-      .order("created_at", { ascending: false })
-      .limit(8),
-    supabase
-      .from("candidaturas_voluntariado")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "aprovado"),
-    supabase
-      .from("alunos")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "ativo"),
-    supabase
-      .from("funcoes_voluntariado")
-      .select("id", { count: "exact", head: true })
-      .eq("ativo", true),
-    supabase
-      .from("necessidades_voluntariado")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "aberta"),
-  ]);
-
-  const config = (configResult.data as SiteConfig) ?? defaultConfig;
-  const gallery = (galleryResult.data ?? []) as GalleryItem[];
-
-  const heroSlides: HeroSlide[] = gallery.slice(0, 3).map((item) => ({
-    imageUrl: item.image_url,
-    caption: item.legenda ?? config.hero_subtitle,
-  }));
-
-  if (!heroSlides.length && config.hero_image_url) {
-    heroSlides.push({
-      imageUrl: config.hero_image_url,
-      caption: config.hero_subtitle,
-    });
-  }
-
-  const stats = [
-    {
-      label: "Voluntários ativos",
-      value: formatMetric(volunteerCountResult.count ?? 0),
-      detail: "Candidaturas aprovadas que já atuam com a gente",
-    },
-    {
-      label: "Pessoas atendidas",
-      value: formatMetric(activeStudentsResult.count ?? 0),
-      detail: "Alunos e famílias acompanhadas em turmas ativas",
-    },
-    {
-      label: "Frentes de trabalho",
-      value: formatMetric(activeFunctionsResult.count ?? 0),
-      detail: "Funções de voluntariado em andamento",
-    },
-    {
-      label: "Necessidades abertas",
-      value: formatMetric(openNeedsResult.count ?? 0),
-      detail: "Vagas em aberto para novos voluntários",
-    },
-  ];
-
-  const storyCards = gallery.slice(0, 4).map((item) => {
-    const segments = portraitStory(item, config.project_subtitle, config.work_text);
-    return {
-      id: item.id,
-      imageUrl: item.image_url,
-      title: segments.title,
-      description: segments.description,
-    };
-  });
-
+export default function HomePage() {
   return (
-    <main className="bg-white text-zinc-900">
-      <PublicHeader projectName={config.project_name} projectSubtitle={config.project_subtitle} />
+    <div className="min-h-screen bg-white text-zinc-900">
+      <PublicHeader projectName="O Atitude" projectSubtitle="Projeto Escola Social" />
 
-      <HeroSlider
-        slides={heroSlides}
-        title={config.hero_title}
-        subtitle={config.hero_subtitle}
-        accentColor={config.accent_color}
-        primaryAction={{
-          label: config.hero_button_primary_text || "Seja voluntário",
-          href: config.hero_button_primary_link || "/seja-voluntario",
-        }}
-        secondaryAction={{
-          label: config.hero_button_secondary_text || "Conheça o projeto",
-          href: config.hero_button_secondary_link || "/quem-somos",
-        }}
-      />
-
-      <section className="bg-zinc-50 px-6 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="flex flex-col gap-2">
-            <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">Números que comprovam</p>
-            <h2 className="text-3xl font-bold text-zinc-900">Impacto em evidência</h2>
-            <p className="max-w-3xl text-sm text-zinc-600">{config.work_text}</p>
-          </div>
-
-          <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm"
-              >
-                <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{stat.detail}</p>
-                <p className="mt-4 text-4xl font-semibold text-zinc-900">{stat.value}</p>
-                <p className="mt-2 text-sm text-zinc-600">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-6 py-16">
-        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-2">
-          <article className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Missão da organização</p>
-            <h3 className="mt-3 text-3xl font-semibold text-zinc-900">{config.about_title}</h3>
-            <p className="mt-4 text-sm leading-relaxed text-zinc-600">
-              {config.about_text}
-            </p>
-          </article>
-
-          <article className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Histórias de impacto</p>
-            <h3 className="mt-3 text-3xl font-semibold text-zinc-900">{config.work_title}</h3>
-            <p className="mt-4 text-sm leading-relaxed text-zinc-600">
-              Compartilhamos a presença cotidiana dos nossos voluntários, famílias e estudantes para mostrar
-              onde seu investimento chega.
+      <main className="space-y-16 px-6 py-10 md:px-8">
+        <section className="mx-auto max-w-5xl space-y-6">
+          <div className="rounded-3xl border border-zinc-200 bg-gradient-to-br from-emerald-500 to-cyan-500 p-8 text-white shadow-xl">
+            <p className="text-sm uppercase tracking-[0.4em] text-white/90">Projeto Escola Social</p>
+            <h1 className="mt-3 text-4xl font-bold leading-tight">
+              Transformando vidas por meio da educação, esporte e inclusão
+            </h1>
+            <p className="mt-4 text-lg text-white/90">
+              A ATITUDE é uma Organização da Sociedade Civil fundada em setembro de 2021 em
+              Almirante Tamandaré (PR). Atuamos com educação, esporte, música, voluntariado e assistência
+              social para promover inclusão e cidadania.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/faca-parte"
-                className="rounded-full border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-900"
-              >
-                Conhecer programas
-              </Link>
-              <Link
-                href="/contato"
-                className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-semibold text-white"
-                style={{ backgroundColor: config.primary_color }}
-              >
-                Conversar com a equipe
-              </Link>
+              <button className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-zinc-900">
+                Faça parte
+              </button>
+              <button className="rounded-full border border-white/70 px-6 py-3 text-sm text-white">
+                Conheça nossos projetos
+              </button>
             </div>
-          </article>
-        </div>
-      </section>
-
-      <StoryScroller
-        title={`Vivências do ${config.project_name}`}
-        subtitle="Galeria viva com fotos recentes e relatos curtos que aproximam você dos nossos voluntários e comunidades."
-        stories={storyCards}
-      />
-
-      <section className="bg-zinc-900 px-6 py-16 text-white">
-        <div className="mx-auto max-w-5xl text-center">
-          <p className="text-xs uppercase tracking-[0.4em] text-white/60">Investimento social</p>
-          <h3 className="mt-4 text-3xl font-semibold">Sinta o pulso do Atitude</h3>
-          <p className="mt-4 text-sm text-white/80">
-            Transparência e propósito em cada número. Mantemos investidores, parceiros e voluntários próximos com
-            relatórios humanizados, fotos atualizadas e painéis com as pessoas reais que são impactadas todos os dias.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/seja-voluntario"
-              className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-zinc-900"
-            >
-              Ver oportunidades
-            </Link>
-            <Link
-              href="/contato"
-              className="rounded-full border border-white/60 px-6 py-3 text-sm font-semibold text-white"
-            >
-              Agendar conversa
-            </Link>
           </div>
-        </div>
-      </section>
+          <div className="rounded-3xl border border-zinc-200 bg-white/80 p-6 shadow-sm">
+            <h2 className="text-2xl font-semibold text-zinc-900">Objetivo Geral</h2>
+            <p className="mt-3 text-zinc-600">
+              Promover o ser humano como cidadão, desenvolvendo suas potencialidades por meio de ações
+              culturais, artísticas, esportivas, socioeducativas, assistência social, educação e voluntariado.
+            </p>
+          </div>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <article className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h3 className="text-xl font-semibold text-zinc-900">Público atendido</h3>
+            <p className="mt-3 text-zinc-600">
+              Crianças de 3 a 12 anos, adolescentes até 18 anos e idosos a partir de 50 anos em
+              vulnerabilidade no bairro Lamenha Grande, em Almirante Tamandaré/PR.
+            </p>
+            <ul className="mt-4 space-y-2 text-sm text-zinc-700">
+              <li>• Inclusão social com orientação pedagógica</li>
+              <li>• Desenvolvimento de cidadania e potencialidades</li>
+              <li>• Apoio socioeconômico e convivência em grupo</li>
+            </ul>
+          </article>
+          <article className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h3 className="text-xl font-semibold text-zinc-900">Equipe e Recursos</h3>
+            <ul className="mt-4 space-y-2 text-sm text-zinc-700">
+              <li>• 02 educadores sociais</li>
+              <li>• 01 serviço geral e 01 secretário</li>
+              <li>• Todos atuam 20h semanais</li>
+              {resources.map((item) => (
+                <li key={item}>• {item}</li>
+              ))}
+            </ul>
+          </article>
+        </section>
+
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">Projetos</p>
+              <h2 className="text-3xl font-semibold">Em andamento</h2>
+            </div>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {projectsInProgress.map((project) => (
+              <article
+                key={project.title}
+                className="rounded-3xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 p-5 shadow-sm"
+              >
+                <h3 className="text-xl font-semibold text-zinc-900">{project.title}</h3>
+                <p className="mt-2 text-sm text-zinc-700">{project.description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">Em breve</p>
+              <h2 className="text-3xl font-semibold">Projetos que serão implantados</h2>
+            </div>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {upcomingProjects.map((project) => (
+              <article
+                key={project.title}
+                className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm"
+              >
+                <h3 className="text-xl font-semibold text-zinc-900">{project.title}</h3>
+                <p className="mt-2 text-sm text-zinc-700">{project.description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-semibold text-zinc-900">O que cada projeto oferece</h2>
+          <p className="mt-3 text-zinc-600">
+            Cada aluno recebe educadores sociais, material didático, materiais específicos e lanches em
+            um ambiente acolhedor.
+          </p>
+        </section>
+
+        <section className="space-y-6">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-3xl font-semibold">Como funciona</h2>
+            <p className="text-sm text-zinc-500">
+              Projetos semanais com turmas por idade. Aprendizado, desenvolvimento pessoal e integração social.
+            </p>
+          </div>
+          <p className="text-sm text-zinc-700">
+            As aulas são estruturadas para oferecer aprendizado contínuo, desenvolvimento das potencialidades e
+            convívio saudável.
+          </p>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-3">
+          <article className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h3 className="text-xl font-semibold text-zinc-900">Equipe</h3>
+            <p className="mt-3 text-sm text-zinc-600">
+              Profissionais comprometidos: educadores sociais, equipe administrativa e apoio operacional atuando
+              diretamente nos projetos.
+            </p>
+          </article>
+          <article className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h3 className="text-xl font-semibold text-zinc-900">Estrutura</h3>
+            <ul className="mt-3 space-y-2 text-sm text-zinc-700">
+              {structureItems.map((item) => (
+                <li key={item}>• {item}</li>
+              ))}
+            </ul>
+          </article>
+          <article className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h3 className="text-xl font-semibold text-zinc-900">Recursos diversos</h3>
+            <p className="mt-3 text-sm text-zinc-600">
+              Recursos mensais garantem alimentação saudável para os participantes e apoio logístico constante.
+            </p>
+          </article>
+        </section>
+
+        <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-semibold text-zinc-900">Ficha técnica</h2>
+          <ul className="mt-3 space-y-1 text-sm text-zinc-700">
+            <li>Diretor Presidente: Raimundo Alberto Gonçalves da Silva</li>
+            <li>Primeira Secretária: Edilsem Cristina Mengarda Figueirôa</li>
+            <li>Segunda Secretária: Jessica Domingues</li>
+            <li>Primeiro Tesoureiro: Welliton da Silva Santo</li>
+            <li>Segunda Tesoureira: Cristiane Ribeiro Martins</li>
+            <li>Conselho Fiscal: Maria da Penha Silva dos Santos, Reinaldo Vicente Traczynski</li>
+          </ul>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Contato</p>
+            <h2 className="mt-2 text-2xl font-semibold text-zinc-900">ASSOCIAÇÃO ATITUDE</h2>
+            <p className="mt-3 text-sm text-zinc-600">
+              CNPJ: 47.462.832/0001-93<br />
+              R Vereador Wadislau Bugalski, 3827<br />
+              Lamenha Grande, Almirante Tamandaré - PR<br />
+              TEL: +55 41 99288-1025
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <a
+                href="https://wa.me/5541992881025"
+                className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white"
+              >
+                Entrar em contato
+              </a>
+            </div>
+          </div>
+          <div className="rounded-3xl border border-zinc-200 bg-white/90 p-6 shadow-sm">
+            <h3 className="text-xl font-semibold text-zinc-900">Projetos + Estrutura</h3>
+            <p className="mt-3 text-sm text-zinc-600">
+              A compra de materiais é mensal, exceto itens específicos (uniformes, instrumentos) comprados sob demanda.
+            </p>
+            <p className="mt-3 text-sm text-zinc-600">
+              Recursos para limpeza, higiene, material didático e alimentação garantem um ambiente completo para cada aluno.
+            </p>
+          </div>
+        </section>
+      </main>
 
       <PublicFooter
-        projectName={config.project_name}
-        projectSubtitle={config.project_subtitle}
-        contactEmail={config.contact_email}
-        contactPhone={config.contact_phone}
-        contactWhatsapp={config.contact_whatsapp}
+        projectName="O Atitude"
+        projectSubtitle="Projeto Escola Social"
+        contactEmail=""
+        contactPhone="+55 41 99288-1025"
+        contactWhatsapp="+55 41 99288-1025"
       />
-    </main>
+    </div>
   );
 }

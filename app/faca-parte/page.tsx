@@ -1,79 +1,65 @@
-import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
 import { PublicHeader } from "@/components/layout/public-header";
 import { PublicFooter } from "@/components/layout/public-footer";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 
-export default async function FacaPartePage() {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("site_config")
-    .select("*")
-    .limit(1)
-    .single();
+const callToActions = [
+  {
+    title: "Voluntariado",
+    description:
+      "Participe nas aulas de artesanato, pilates, balé e jiu-jitsu levando conhecimento e atenção às pessoas atendidas.",
+    action: { label: "Ver oportunidades", href: "/seja-voluntario" },
+  },
+  {
+    title: "Apoio institucional",
+    description:
+      "Doações de materiais, alimentos e equipamentos ajudam a manter a estrutura de atendimentos e fortalecer novos projetos.",
+    action: { label: "Contribua com o O Atitude", href: "/contato" },
+  },
+];
 
-  const config = data ?? {
-    project_name: "Atitude",
-    project_subtitle: "Projeto social e comunitário",
-    contact_email: "",
-    contact_phone: "",
-    contact_whatsapp: "",
-  };
-
+export default function FacaPartePage() {
   return (
-    <main className="min-h-screen bg-zinc-50">
-      <PublicHeader
-        projectName={config.project_name}
-        projectSubtitle={config.project_subtitle}
-      />
+    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+      <PublicHeader projectName="O Atitude" projectSubtitle="Projeto Escola Social" />
 
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid gap-4 md: p-6 md:grid-cols-2">
-          <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-            <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
-              Voluntariado
-            </p>
-            <h1 className="mt-3 text-3xl font-bold text-zinc-900">
-              Sirva como voluntário
-            </h1>
-            <p className="mt-4 leading-7 text-zinc-600">
-              Veja as necessidades abertas e candidate-se para atuar nas áreas em que o projeto precisa de apoio.
-            </p>
-            <Link
-              href="/seja-voluntario"
-              className="mt-6 inline-flex rounded-xl bg-zinc-900 px-5 py-3 text-sm font-medium text-white"
-            >
-              Ver oportunidades
-            </Link>
-          </div>
+      <main className="space-y-10 px-6 py-12 md:px-10">
+        <section className="mx-auto max-w-4xl space-y-4 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">Faça parte</p>
+          <h1 className="text-3xl font-bold text-zinc-900">Conecte-se com a transformação social</h1>
+          <p className="text-sm text-zinc-600">
+            A ATITUDE depende de voluntários, parceiros e apoiadores para continuar oferecendo educação,
+            esporte, música e assistência social. Sua presença é essencial para gerar impacto nas pessoas atendidas.
+          </p>
+        </section>
 
-          <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-            <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
-              Contato
-            </p>
-            <h2 className="mt-3 text-3xl font-bold text-zinc-900">
-              Quer falar com a equipe?
-            </h2>
-            <p className="mt-4 leading-7 text-zinc-600">
-              Entre em contato para tirar dúvidas, entender melhor o projeto ou conversar sobre formas de participação.
-            </p>
-            <Link
-              href="/contato"
-              className="mt-6 inline-flex rounded-xl border border-zinc-300 px-5 py-3 text-sm font-medium text-zinc-900"
+        <div className="grid gap-6 md:grid-cols-2">
+          {callToActions.map((card) => (
+            <article
+              key={card.title}
+              className="flex flex-col justify-between rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm"
             >
-              Ir para contato
-            </Link>
-          </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{card.title}</p>
+                <h2 className="mt-2 text-2xl font-semibold text-zinc-900">{card.title}</h2>
+                <p className="mt-3 text-sm text-zinc-600">{card.description}</p>
+              </div>
+              <a
+                href={card.action.href}
+                className="mt-4 inline-flex rounded-full border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-900"
+              >
+                {card.action.label}
+              </a>
+            </article>
+          ))}
         </div>
-      </section>
+      </main>
 
       <PublicFooter
-        projectName={config.project_name}
-        projectSubtitle={config.project_subtitle}
-        contactEmail={config.contact_email}
-        contactPhone={config.contact_phone}
-        contactWhatsapp={config.contact_whatsapp}
+        projectName="O Atitude"
+        projectSubtitle="Projeto Escola Social"
+        contactEmail=""
+        contactPhone="+55 41 99288-1025"
+        contactWhatsapp="+55 41 99288-1025"
       />
-    </main>
+    </div>
   );
 }
