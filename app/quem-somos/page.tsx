@@ -2,7 +2,7 @@ import { PublicHeader } from "@/components/layout/public-header";
 import { PublicFooter } from "@/components/layout/public-footer";
 
 const quemSomosText = [
-  "A ATITUDE é uma Organização da Sociedade Civil, criada em setembro de 2021 em Almirante Tamandaré, Paraná, sem fins lucrativos, que atua na assistência social através das áreas de educação, esporte, música, voluntariado e ações socioassistenciais.",
+  "O ATITUDE é uma Organização da Sociedade Civil, criada em setembro de 2021 em Almirante Tamandaré, Paraná, sem fins lucrativos, que atua na assistência social através das áreas de educação, esporte, música, voluntariado e ações socioassistenciais.",
   "Nosso foco é garantir inclusão social e cidadania com projetos direcionados à comunidade do bairro Lamenha Grande.",
   "Atendemos crianças, adolescentes e idosos em situação de vulnerabilidade, articulando oportunidades reais de transformação.",
 ];

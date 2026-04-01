@@ -25,6 +25,7 @@ type SiteConfig = {
   contact_email: string;
   contact_phone: string;
   contact_whatsapp: string;
+  hero_gallery_image_ids: string;
 };
 
 const defaultConfig: SiteConfig = {
@@ -50,6 +51,7 @@ const defaultConfig: SiteConfig = {
   contact_email: "",
   contact_phone: "",
   contact_whatsapp: "",
+  hero_gallery_image_ids: "",
 };
 
 type GalleryItem = {
@@ -57,6 +59,14 @@ type GalleryItem = {
   image_url: string;
   legenda: string | null;
 };
+
+function parseHeroGalleryIds(value?: string | null) {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isFinite(item));
+}
 
 function formatMetric(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -119,10 +129,21 @@ export default async function HomePage() {
   const config = (configResult.data as SiteConfig) ?? defaultConfig;
   const gallery = (galleryResult.data ?? []) as GalleryItem[];
 
-  const heroSlides: HeroSlide[] = gallery.slice(0, 3).map((item) => ({
-    imageUrl: item.image_url,
-    caption: item.legenda ?? config.hero_subtitle,
-  }));
+  const heroGalleryIds = parseHeroGalleryIds(config.hero_gallery_image_ids);
+  const selectedGallery = heroGalleryIds
+    .map((id) => gallery.find((item) => item.id === id))
+    .filter((item): item is GalleryItem => Boolean(item));
+
+  const heroSlides: HeroSlide[] =
+    selectedGallery.length > 0
+      ? selectedGallery.map((item) => ({
+          imageUrl: item.image_url,
+          caption: item.legenda ?? config.hero_subtitle,
+        }))
+      : gallery.slice(0, 3).map((item) => ({
+          imageUrl: item.image_url,
+          caption: item.legenda ?? config.hero_subtitle,
+        }));
 
   if (!heroSlides.length && config.hero_image_url) {
     heroSlides.push({

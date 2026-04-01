@@ -28,7 +28,29 @@ type SiteConfig = {
   instagram_url: string;
   facebook_url: string;
   youtube_url: string;
+  hero_gallery_image_ids: string;
 };
+
+type GalleryItem = {
+  id: number;
+  image_url: string;
+  legenda: string | null;
+};
+
+type TabKey =
+  | "home"
+  | "quemSomos"
+  | "oQueEstamosFazendo"
+  | "facaParte"
+  | "contato";
+
+const pageTabs: { key: TabKey; label: string }[] = [
+  { key: "home", label: "Início" },
+  { key: "quemSomos", label: "Quem somos" },
+  { key: "oQueEstamosFazendo", label: "O que estamos fazendo" },
+  { key: "facaParte", label: "Faça parte" },
+  { key: "contato", label: "Contato" },
+];
 
 const emptyConfig: SiteConfig = {
   project_name: "",
@@ -53,6 +75,7 @@ const emptyConfig: SiteConfig = {
   instagram_url: "",
   facebook_url: "",
   youtube_url: "",
+  hero_gallery_image_ids: "",
 };
 
 function SectionCard({
@@ -79,6 +102,16 @@ function SectionCard({
 
 function FieldHelp({ children }: { children: React.ReactNode }) {
   return <p className="mt-1 text-xs text-zinc-500">{children}</p>;
+}
+
+function parseHeroGalleryIds(value?: string) {
+  if (!value) {
+    return [];
+  }
+  return value
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isFinite(item));
 }
 
 function ColorField({
@@ -128,6 +161,28 @@ export default function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [activeTab, setActiveTab] = useState<TabKey>("home");
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
+  const [galleryLoading, setGalleryLoading] = useState(true);
+  const [selectedHeroImageIds, setSelectedHeroImageIds] = useState<number[]>([]);
+
+  async function fetchGallery() {
+    const { data, error } = await supabase
+      .from("site_gallery")
+      .select("id,image_url,legenda")
+      .eq("ativo", true)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      setGalleryItems([]);
+      setGalleryLoading(false);
+      return;
+    }
+
+    setGalleryItems((data ?? []) as GalleryItem[]);
+    setGalleryLoading(false);
+  }
 
   useEffect(() => {
     async function fetchConfig() {
@@ -148,8 +203,12 @@ export default function ConfiguracoesPage() {
           ...emptyConfig,
           ...data,
         });
+        setSelectedHeroImageIds(
+          parseHeroGalleryIds(data.hero_gallery_image_ids)
+        );
       }
 
+      await fetchGallery();
       setLoading(false);
     }
 
@@ -163,12 +222,42 @@ export default function ConfiguracoesPage() {
     setConfig((prev) => ({ ...prev, [name]: value }));
   }
 
+  function toggleHeroGalleryImage(id: number) {
+    setSelectedHeroImageIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setMessage("");
 
-    const payload = { ...config };
+    const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    const phonePattern = /^\\(\\d{2}\\)\\s9\\s\\d{4}-\\d{4}$/;
+
+    if (config.contact_email && !emailPattern.test(config.contact_email)) {
+      setMessage("Informe um e-mail válido.");
+      setSaving(false);
+      return;
+    }
+
+    if (config.contact_phone && !phonePattern.test(config.contact_phone)) {
+      setMessage("Telefone deve seguir o padrão (41) 9 9999-9999.");
+      setSaving(false);
+      return;
+    }
+
+    if (config.contact_whatsapp && !phonePattern.test(config.contact_whatsapp)) {
+      setMessage("WhatsApp deve seguir o padrão (41) 9 9999-9999.");
+      setSaving(false);
+      return;
+    }
+
+    const payload = {
+      ...config,
+      hero_gallery_image_ids: selectedHeroImageIds.join(","),
+    };
     delete (payload as { id?: number }).id;
 
     let error = null;
@@ -195,6 +284,10 @@ export default function ConfiguracoesPage() {
     }
 
     setMessage("Configurações salvas com sucesso.");
+    setConfig((prev) => ({
+      ...prev,
+      hero_gallery_image_ids: selectedHeroImageIds.join(","),
+    }));
     setSaving(false);
   }
 
@@ -223,342 +316,508 @@ export default function ConfiguracoesPage() {
                 onSubmit={handleSubmit}
                 className="space-y-6 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm"
               >
-                <SectionCard
-                  title="Identidade"
-                  description="Edite nome, subtítulo e redes sociais em um único bloco enxuto."
-                >
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        Nome do projeto
-                      </label>
-                      <input
-                        name="project_name"
-                        value={config.project_name}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>
-                        Nome usado no header e no rodapé.
-                      </FieldHelp>
-                    </div>
+                <div className="flex flex-wrap gap-2">
+                  {pageTabs.map((tab) => {
+                    const isActive = tab.key === activeTab;
+                    return (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setActiveTab(tab.key)}
+                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                          isActive
+                            ? "border-zinc-900 bg-zinc-900 text-white"
+                            : "border-zinc-200 bg-zinc-100 text-zinc-700"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
 
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        Subtítulo curto
-                      </label>
-                      <input
-                        name="project_subtitle"
-                        value={config.project_subtitle}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>
-                        Frase curta que reforça a personalidade do projeto.
-                      </FieldHelp>
-                    </div>
-                  </div>
+                <div className="space-y-6">
+                  {activeTab === "home" && (
+                    <>
+                      <SectionCard
+                        title="Identidade"
+                        description="Edite nome, subtítulo e comunidades vinculadas ao projeto."
+                      >
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Nome do projeto
+                            </label>
+                            <input
+                              name="project_name"
+                              value={config.project_name}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>
+                              Nome exibido no header, rodapé e cartões.
+                            </FieldHelp>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Subtítulo curto
+                            </label>
+                            <input
+                              name="project_subtitle"
+                              value={config.project_subtitle}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>
+                              Complementa o nome do projeto com a proposta.
+                            </FieldHelp>
+                          </div>
+                        </div>
+                      </SectionCard>
 
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        Instagram
-                      </label>
-                      <input
-                        name="instagram_url"
-                        value={config.instagram_url}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>Link direto ao perfil público.</FieldHelp>
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        Facebook
-                      </label>
-                      <input
-                        name="facebook_url"
-                        value={config.facebook_url}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>Compartilhe o endereço oficial.</FieldHelp>
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        Youtube
-                      </label>
-                      <input
-                        name="youtube_url"
-                        value={config.youtube_url}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>Canal oficial com vídeos e histórias.</FieldHelp>
-                    </div>
-                  </div>
-                </SectionCard>
+                      <SectionCard
+                        title="Hero e chamadas"
+                        description="Configure título, subtítulo e botões que impulsionam ações."
+                      >
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Título principal
+                          </label>
+                          <input
+                            name="hero_title"
+                            value={config.hero_title}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                          <FieldHelp>
+                            Frase que destaca o impacto imediato do projeto.
+                          </FieldHelp>
+                        </div>
 
-                <SectionCard
-                  title="Hero e chamadas"
-                  description="Configure título, botões e imagem principal da home."
-                >
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-zinc-700">
-                      Título principal
-                    </label>
-                    <input
-                      name="hero_title"
-                      value={config.hero_title}
-                      onChange={handleChange}
-                      className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                    />
-                    <FieldHelp>
-                      Frase de impacto que aparece sobre a imagem.
-                    </FieldHelp>
-                  </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Texto de apoio
+                          </label>
+                          <textarea
+                            name="hero_subtitle"
+                            value={config.hero_subtitle}
+                            onChange={handleChange}
+                            rows={3}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                          <FieldHelp>
+                            Amplie a mensagem com contexto para visitantes.
+                          </FieldHelp>
+                        </div>
 
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-zinc-700">
-                      Texto de apoio
-                    </label>
-                    <textarea
-                      name="hero_subtitle"
-                      value={config.hero_subtitle}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                    />
-                    <FieldHelp>
-                      Expanda o que os visitantes acabam de ler.
-                    </FieldHelp>
-                  </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Botão principal
+                            </label>
+                            <input
+                              name="hero_button_primary_text"
+                              value={config.hero_button_primary_text}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>
+                              Verbo direto para o envolvimento imediato.
+                            </FieldHelp>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Link do botão
+                            </label>
+                            <input
+                              name="hero_button_primary_link"
+                              value={config.hero_button_primary_link}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>Exemplo: /seja-voluntario</FieldHelp>
+                          </div>
+                        </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        Botão principal
-                      </label>
-                      <input
-                        name="hero_button_primary_text"
-                        value={config.hero_button_primary_text}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>Use verbos de ação.</FieldHelp>
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        Link do botão
-                      </label>
-                      <input
-                        name="hero_button_primary_link"
-                        value={config.hero_button_primary_link}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>Ex: /seja-voluntario</FieldHelp>
-                    </div>
-                  </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Botão secundário
+                            </label>
+                            <input
+                              name="hero_button_secondary_text"
+                              value={config.hero_button_secondary_text}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>Apoia a narrativa principal.</FieldHelp>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Link secundário
+                            </label>
+                            <input
+                              name="hero_button_secondary_link"
+                              value={config.hero_button_secondary_link}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>Exemplo: /quem-somos</FieldHelp>
+                          </div>
+                        </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        Botão secundário
-                      </label>
-                      <input
-                        name="hero_button_secondary_text"
-                        value={config.hero_button_secondary_text}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>Complementa a ação principal.</FieldHelp>
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        Link secundário
-                      </label>
-                      <input
-                        name="hero_button_secondary_link"
-                        value={config.hero_button_secondary_link}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>Ex: /quem-somos</FieldHelp>
-                    </div>
-                  </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Imagem principal
+                          </label>
+                          <input
+                            name="hero_image_url"
+                            value={config.hero_image_url}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                          <FieldHelp>
+                            Use um link público e com boa resolução.
+                          </FieldHelp>
+                          {config.hero_image_url ? (
+                            <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-200">
+                              <img
+                                src={config.hero_image_url.trim()}
+                                alt="Prévia da imagem principal"
+                                className="h-64 w-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                }}
+                              />
+                              <div className="p-3 text-sm text-zinc-500">
+                                Verifique se o link está publicamente disponível.
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-500">
+                              Nenhuma imagem configurada.
+                            </div>
+                          )}
+                        </div>
+                      </SectionCard>
 
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-zinc-700">
-                      Imagem principal
-                    </label>
-                    <input
-                      name="hero_image_url"
-                      value={config.hero_image_url}
-                      onChange={handleChange}
-                      className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                    />
-                    <FieldHelp>
-                      Utilize um link público e com boa resolução.
-                    </FieldHelp>
-                    {config.hero_image_url ? (
-                      <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-200">
-                        <img
-                          src={config.hero_image_url.trim()}
-                          alt="Prévia da imagem principal"
-                          className="h-64 w-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                          }}
+                      <SectionCard
+                        title="Imagens da home"
+                        description="Selecione as fotos da galeria que alimentam o slider principal."
+                      >
+                        {galleryLoading ? (
+                          <p className="text-sm text-zinc-500">Carregando galeria...</p>
+                        ) : (
+                          <>
+                            {galleryItems.length === 0 ? (
+                              <p className="text-sm text-zinc-500">
+                                Nenhuma imagem ativa na galeria ainda.
+                              </p>
+                            ) : (
+                              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {galleryItems.map((item) => {
+                                  const selected = selectedHeroImageIds.includes(item.id);
+                                  return (
+                                    <label
+                                      key={item.id}
+                                      className={`group flex cursor-pointer flex-col gap-2 rounded-2xl border px-3 py-3 transition ${
+                                        selected
+                                          ? "border-emerald-500 bg-emerald-50"
+                                          : "border-zinc-200 bg-white"
+                                      }`}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={selected}
+                                        onChange={() => toggleHeroGalleryImage(item.id)}
+                                        className="sr-only"
+                                      />
+                                      <div className="relative h-40 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
+                                        <img
+                                          src={item.image_url}
+                                          alt={item.legenda ?? "Imagem da galeria"}
+                                          className="h-full w-full object-cover"
+                                        />
+                                        <span
+                                          className={`absolute top-2 right-2 inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-semibold ${
+                                            selected
+                                              ? "bg-emerald-600 text-white"
+                                              : "bg-black/60 text-white"
+                                          }`}
+                                        >
+                                          {selected ? "Selecionada" : "Selecionar"}
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-zinc-500 line-clamp-2">
+                                        {item.legenda ?? "Sem legenda definida"}
+                                      </p>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </>
+                        )}
+                        <FieldHelp>
+                          As imagens marcadas irão preencher o slider da página inicial.
+                        </FieldHelp>
+                      </SectionCard>
+                    </>
+                  )}
+
+                  {activeTab === "quemSomos" && (
+                    <SectionCard
+                      title="Quem somos"
+                      description="Conte quem é O Atitude e o contexto social atendido."
+                    >
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-zinc-700">
+                          Título
+                        </label>
+                        <input
+                          name="about_title"
+                          value={config.about_title}
+                          onChange={handleChange}
+                          className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
                         />
-                        <div className="p-3 text-sm text-zinc-500">
-                          Verifique se o link está livre para uso público.
+                        <FieldHelp>Título exibido na seção institucional.</FieldHelp>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-zinc-700">
+                          Texto
+                        </label>
+                        <textarea
+                          name="about_text"
+                          value={config.about_text}
+                          onChange={handleChange}
+                          rows={4}
+                          className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                        />
+                        <FieldHelp>
+                          Conte a trajetória, missão e público atendido.
+                        </FieldHelp>
+                      </div>
+                    </SectionCard>
+                  )}
+
+                  {activeTab === "oQueEstamosFazendo" && (
+                    <SectionCard
+                      title="O que estamos fazendo"
+                      description="Destaque os projetos ativos e suas entregas."
+                    >
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-zinc-700">
+                          Título da atuação
+                        </label>
+                        <input
+                          name="work_title"
+                          value={config.work_title}
+                          onChange={handleChange}
+                          className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                        />
+                        <FieldHelp>
+                          Cabeçalho da seção com os números e relatos.
+                        </FieldHelp>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-zinc-700">
+                          Texto de impacto
+                        </label>
+                        <textarea
+                          name="work_text"
+                          value={config.work_text}
+                          onChange={handleChange}
+                          rows={4}
+                          className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                        />
+                        <FieldHelp>
+                          Use exemplos concretos das frentes operacionais.
+                        </FieldHelp>
+                      </div>
+                    </SectionCard>
+                  )}
+
+                  {activeTab === "facaParte" && (
+                    <SectionCard
+                      title="Faça parte"
+                      description="Defina chamadas direcionadas a voluntários e parceiros."
+                    >
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Texto do botão principal
+                          </label>
+                          <input
+                            name="hero_button_primary_text"
+                            value={config.hero_button_primary_text}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                          <FieldHelp>Verbo que chama para agir.</FieldHelp>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Link do botão principal
+                          </label>
+                          <input
+                            name="hero_button_primary_link"
+                            value={config.hero_button_primary_link}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                          <FieldHelp>
+                            Pode ser uma rota interna como /seja-voluntario.
+                          </FieldHelp>
                         </div>
                       </div>
-                    ) : (
-                      <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-500">
-                        Nenhuma imagem cadastrada.
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Texto do botão secundário
+                          </label>
+                          <input
+                            name="hero_button_secondary_text"
+                            value={config.hero_button_secondary_text}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                          <FieldHelp>Complementa o convite principal.</FieldHelp>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Link do botão secundário
+                          </label>
+                          <input
+                            name="hero_button_secondary_link"
+                            value={config.hero_button_secondary_link}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                          <FieldHelp>
+                            Ideal para detalhar programas ou impacto.
+                          </FieldHelp>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </SectionCard>
+                    </SectionCard>
+                  )}
+
+                  {activeTab === "contato" && (
+                    <SectionCard
+                      title="Contato e canais"
+                      description="Atualize e-mail, telefone e WhatsApp com validação."
+                    >
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            E-mail
+                          </label>
+                          <input
+                            type="email"
+                            name="contact_email"
+                            value={config.contact_email}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            pattern="^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+                            title="Informe um e-mail válido."
+                          />
+                          <FieldHelp>
+                            Canal direto exibido no rodapé e formulários.
+                          </FieldHelp>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Telefone
+                          </label>
+                          <input
+                            type="tel"
+                            name="contact_phone"
+                            value={config.contact_phone}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            pattern="^\\(\\d{2}\\)\\s9\\s\\d{4}-\\d{4}$"
+                            title="Formato esperado: (41) 9 9999-9999"
+                          />
+                          <FieldHelp>
+                            Clique direciona para conversa no WhatsApp.
+                          </FieldHelp>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            WhatsApp
+                          </label>
+                          <input
+                            type="tel"
+                            name="contact_whatsapp"
+                            value={config.contact_whatsapp}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            pattern="^\\(\\d{2}\\)\\s9\\s\\d{4}-\\d{4}$"
+                            title="Formato esperado: (41) 9 9999-9999"
+                          />
+                          <FieldHelp>
+                            Clique abre https://wa.me/+55 com o número informado.
+                          </FieldHelp>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid gap-4 md:grid-cols-3">
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Instagram
+                          </label>
+                          <input
+                            name="instagram_url"
+                            value={config.instagram_url}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Facebook
+                          </label>
+                          <input
+                            name="facebook_url"
+                            value={config.facebook_url}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Youtube
+                          </label>
+                          <input
+                            name="youtube_url"
+                            value={config.youtube_url}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                        </div>
+                      </div>
+                    </SectionCard>
+                  )}
+                </div>
 
                 <SectionCard
-                  title="Storytelling"
-                  description="Ajuste os textos que explicam missão e impacto."
-                >
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        Título da missão
-                      </label>
-                      <input
-                        name="about_title"
-                        value={config.about_title}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>
-                        Cabeçalho da seção “Quem somos”.
-                      </FieldHelp>
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        Título da atuação
-                      </label>
-                      <input
-                        name="work_title"
-                        value={config.work_title}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>
-                        Título usado junto com estatísticas e relatos.
-                      </FieldHelp>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-zinc-700">
-                      Texto da missão
-                    </label>
-                    <textarea
-                      name="about_text"
-                      value={config.about_text}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                    />
-                    <FieldHelp>
-                      Conte quem somos em poucas frases.
-                    </FieldHelp>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-zinc-700">
-                      Texto da atuação
-                    </label>
-                    <textarea
-                      name="work_text"
-                      value={config.work_text}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                    />
-                    <FieldHelp>
-                      Use dados e relatos para contar o impacto.
-                    </FieldHelp>
-                  </div>
-                </SectionCard>
-
-                <SectionCard
-                  title="Contatos e canais"
-                  description="Atualize os principais meios de contato."
+                  title="Paleta de cores"
+                  description="Defina cores que se repetem em todo o site."
                 >
                   <div className="grid gap-4 md:grid-cols-3">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        E-mail
-                      </label>
-                      <input
-                        name="contact_email"
-                        value={config.contact_email}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>
-                        Canal oficial exibido no rodapé.
-                      </FieldHelp>
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        Telefone
-                      </label>
-                      <input
-                        name="contact_phone"
-                        value={config.contact_phone}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>
-                        Número disponível para investidores e famílias.
-                      </FieldHelp>
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-zinc-700">
-                        WhatsApp
-                      </label>
-                      <input
-                        name="contact_whatsapp"
-                        value={config.contact_whatsapp}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                      />
-                      <FieldHelp>
-                        Link direto para mensagens instantâneas.
-                      </FieldHelp>
-                    </div>
-                  </div>
-                </SectionCard>
-
-                <details className="rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
-                  <summary className="cursor-pointer text-sm font-semibold text-zinc-900">
-                    Tema e cores (opcional)
-                  </summary>
-                  <div className="mt-4 grid gap-4 md:grid-cols-3">
                     <ColorField
                       label="Cor principal"
                       name="primary_color"
                       value={config.primary_color}
                       onChange={handleChange}
-                      help="Texto do header e seções escuras."
+                      help="Usada em textos principais e navbar."
                     />
                     <ColorField
                       label="Cor secundária"
                       name="secondary_color"
                       value={config.secondary_color}
                       onChange={handleChange}
-                      help="Fundos de cards e seções claras."
+                      help="Fundo de cards e seções claras."
                     />
                     <ColorField
                       label="Cor de destaque"
@@ -568,20 +827,18 @@ export default function ConfiguracoesPage() {
                       help="Botões e elementos interativos."
                     />
                   </div>
-                </details>
+                </SectionCard>
 
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-col gap-3 border-t border-zinc-200 pt-4">
                   <button
                     type="submit"
                     disabled={saving}
-                    className="rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                    className="w-full rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
                   >
                     {saving ? "Salvando..." : "Salvar configurações"}
                   </button>
                   {message ? (
-                    <p className="text-sm font-semibold text-emerald-700">
-                      {message}
-                    </p>
+                    <p className="text-sm font-semibold text-zinc-600">{message}</p>
                   ) : null}
                 </div>
               </form>

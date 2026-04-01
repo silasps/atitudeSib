@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { PublicAccessButton } from "@/components/layout/public-access-button";
 
@@ -24,7 +24,9 @@ export function PublicHeader({
   projectSubtitle,
 }: PublicHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(true);
   const pathname = usePathname();
+  const lastScrollY = useRef(0);
 
   function closeMenu() {
     setMobileOpen(false);
@@ -34,9 +36,39 @@ export function PublicHeader({
     setMobileOpen((prev) => !prev);
   }
 
+  useEffect(() => {
+    function handleScroll() {
+      const current = window.scrollY;
+      const delta = current - lastScrollY.current;
+
+      if (current <= 20) {
+        setHeaderVisible(true);
+      } else if (delta > 15) {
+        setHeaderVisible(false);
+      } else if (delta < -10) {
+        setHeaderVisible(true);
+      }
+
+      lastScrollY.current = current;
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      setHeaderVisible(true);
+    }
+  }, [mobileOpen]);
+
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
+      <header
+        className={`sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur transition-transform duration-200 ease-out will-change-transform ${
+          headerVisible ? "translate-y-0" : "-translate-y-full"
+        }`}
+      >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6 md:py-5">
           <div className="min-w-0">
             <Link
