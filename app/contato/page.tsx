@@ -1,51 +1,79 @@
+import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
 import { PublicHeader } from "@/components/layout/public-header";
 import { PublicFooter } from "@/components/layout/public-footer";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
-export default function ContatoPage() {
+export default async function ContatoPage() {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("site_config")
+    .select("*")
+    .limit(1)
+    .single();
+
+  const config = data ?? {
+    project_name: "Atitude",
+    project_subtitle: "Projeto social e comunitário",
+    contact_email: "",
+    contact_phone: "",
+    contact_whatsapp: "",
+    instagram_url: "",
+    facebook_url: "",
+    youtube_url: "",
+  };
+
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
-      <PublicHeader projectName="O Atitude" projectSubtitle="Projeto Escola Social" />
+    <main className="min-h-screen bg-zinc-50">
+      <PublicHeader
+        projectName={config.project_name}
+        projectSubtitle={config.project_subtitle}
+      />
 
-      <main className="space-y-12 px-6 py-12 md:px-10">
-        <section className="mx-auto max-w-5xl rounded-3xl border border-zinc-200 bg-gradient-to-br from-emerald-600 to-cyan-500 p-8 text-white shadow-xl">
-          <p className="text-xs uppercase tracking-[0.4em] text-white/80">Contato</p>
-          <h1 className="mt-3 text-3xl font-bold">Converse com a equipe do O Atitude</h1>
-          <p className="mt-3 text-sm text-white/90">
-            Estamos na Rua Vereador Wadislau Bugalski, 3827, bairro Lamenha Grande, Almirante Tamandaré – PR.
+      <section className="mx-auto max-w-5xl px-6 py-16">
+        <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+          <Link href="/" className="text-sm text-zinc-500">
+            ← Voltar para início
+          </Link>
+
+          <h1 className="mt-4 text-4xl font-bold text-zinc-900">Contato</h1>
+          <p className="mt-4 text-zinc-600">
+            Fale com a equipe do projeto pelos canais abaixo.
           </p>
-          <p className="mt-2 text-sm text-white/90">Tel: +55 41 99288-1025 · CNPJ 47.462.832/0001-93</p>
-        </section>
 
-        <section className="mx-auto max-w-4xl space-y-4 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-semibold text-zinc-900">Recursos humanos e administrativos</h2>
-          <ul className="space-y-2 text-sm text-zinc-700">
-            <li>Diretor Presidente: Raimundo Alberto Gonçalves da Silva</li>
-            <li>Primeira Secretária: Edilsem Cristina Mengarda Figueirôa</li>
-            <li>Segunda Secretária: Jessica Domingues</li>
-            <li>Primeiro Tesoureiro: Welliton da Silva Santo</li>
-            <li>Segunda Tesoureira: Cristiane Ribeiro Martins</li>
-            <li>Conselho Fiscal: Maria da Penha Silva dos Santos, Reinaldo Vicente Traczynski</li>
-          </ul>
-        </section>
+          <div className="mt-8 grid gap-4 md: p-6 md:grid-cols-2">
+            <div className="rounded-2xl bg-zinc-50 p-4 md: p-6">
+              <h2 className="text-lg font-semibold text-zinc-900">
+                Canais principais
+              </h2>
 
-        <section className="mx-auto max-w-4xl space-y-4 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h3 className="text-xl font-semibold text-zinc-900">Recursos e infraestrutura</h3>
-          <ul className="space-y-2 text-sm text-zinc-700">
-            <li>• Materiais de limpeza e higiene comprados mensalmente.</li>
-            <li>• Material didático, equipamentos esportivos e musicais sempre em estoque.</li>
-            <li>• Compra de kimonos, violões, halteres, tatames e insumos sob demanda.</li>
-            <li>• Recursos para alimentação garantidos semanalmente.</li>
-          </ul>
-        </section>
-      </main>
+              <div className="mt-4 space-y-2 text-zinc-600">
+                <p><span className="font-medium text-zinc-900">E-mail:</span> {config.contact_email || "Não informado"}</p>
+                <p><span className="font-medium text-zinc-900">Telefone:</span> {config.contact_phone || "Não informado"}</p>
+                <p><span className="font-medium text-zinc-900">WhatsApp:</span> {config.contact_whatsapp || "Não informado"}</p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-zinc-50 p-4 md: p-6">
+              <h2 className="text-lg font-semibold text-zinc-900">Redes sociais</h2>
+
+              <div className="mt-4 space-y-2 text-zinc-600">
+                <p>{config.instagram_url || "Instagram não informado"}</p>
+                <p>{config.facebook_url || "Facebook não informado"}</p>
+                <p>{config.youtube_url || "YouTube não informado"}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <PublicFooter
-        projectName="O Atitude"
-        projectSubtitle="Projeto Escola Social"
-        contactEmail=""
-        contactPhone="+55 41 99288-1025"
-        contactWhatsapp="+55 41 99288-1025"
+        projectName={config.project_name}
+        projectSubtitle={config.project_subtitle}
+        contactEmail={config.contact_email}
+        contactPhone={config.contact_phone}
+        contactWhatsapp={config.contact_whatsapp}
       />
-    </div>
+    </main>
   );
 }

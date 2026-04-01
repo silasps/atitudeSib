@@ -1,52 +1,57 @@
+import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
 import { PublicHeader } from "@/components/layout/public-header";
 import { PublicFooter } from "@/components/layout/public-footer";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
-const quemSomosText = [
-  "A ATITUDE é uma Organização da Sociedade Civil, criada em setembro de 2021 em Almirante Tamandaré, Paraná, sem fins lucrativos, que atua na assistência social através das áreas de educação, esporte, música, voluntariado e ações socioassistenciais.",
-  "Nosso foco é garantir inclusão social e cidadania com projetos direcionados à comunidade do bairro Lamenha Grande.",
-  "Atendemos crianças, adolescentes e idosos em situação de vulnerabilidade, articulando oportunidades reais de transformação.",
-];
 
-export default function QuemSomosPage() {
+export default async function QuemSomosPage() {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("site_config")
+    .select("*")
+    .limit(1)
+    .single();
+
+  const config = data ?? {
+    project_name: "Atitude",
+    project_subtitle: "Projeto social e comunitário",
+    about_title: "Quem somos",
+    about_text: "Em breve.",
+    contact_email: "",
+    contact_phone: "",
+    contact_whatsapp: "",
+  };
+
   return (
-    <main className="min-h-screen bg-white text-zinc-900">
-      <PublicHeader projectName="O Atitude" projectSubtitle="Projeto Escola Social" />
+    <main className="min-h-screen bg-zinc-50">
+      <PublicHeader
+        projectName={config.project_name}
+        projectSubtitle={config.project_subtitle}
+      />
 
-      <section className="mx-auto max-w-5xl space-y-8 px-6 py-16">
-        <article className="space-y-4 rounded-3xl border border-zinc-200 bg-gradient-to-br from-emerald-500 to-teal-500 p-8 text-white shadow-xl">
-          <p className="text-xs uppercase tracking-[0.4em] text-white/80">Quem somos</p>
-          <h1 className="text-3xl font-bold">Projeto Escola Social</h1>
-          <p className="text-sm text-white/90">
-            O Atitude promove o desenvolvimento humano por meio da educação, cultura, esporte,
-            assistência social e voluntariado.
+      <section className="mx-auto max-w-4xl px-6 py-16">
+        <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+          <Link href="/" className="text-sm text-zinc-500">
+            ← Voltar para início
+          </Link>
+
+          <h1 className="mt-4 text-4xl font-bold text-zinc-900">
+            {config.about_title || "Quem somos"}
+          </h1>
+
+          <p className="mt-6 leading-8 text-zinc-700">
+            {config.about_text || "Em breve."}
           </p>
-        </article>
-
-        <article className="space-y-4 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-semibold text-zinc-900">Apresentação</h2>
-          <div className="space-y-3 text-sm text-zinc-700">
-            {quemSomosText.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </div>
-        </article>
-
-        <article className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h3 className="text-xl font-semibold text-zinc-900">Nossa missão</h3>
-          <p className="mt-3 text-sm text-zinc-600">
-            Promover o ser humano como cidadão, desenvolvendo potencialidades pela inclusão
-            social e cidadania com ações culturais, artísticas, esportivas, socioeducativas,
-            assistência social, educação e voluntariado.
-          </p>
-        </article>
+        </div>
       </section>
 
       <PublicFooter
-        projectName="O Atitude"
-        projectSubtitle="Projeto Escola Social"
-        contactEmail=""
-        contactPhone="+55 41 99288-1025"
-        contactWhatsapp="+55 41 99288-1025"
+        projectName={config.project_name}
+        projectSubtitle={config.project_subtitle}
+        contactEmail={config.contact_email}
+        contactPhone={config.contact_phone}
+        contactWhatsapp={config.contact_whatsapp}
       />
     </main>
   );
