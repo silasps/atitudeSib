@@ -1,9 +1,7 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { AdminSidebarProvider } from "@/components/layout/admin-sidebar-context";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
+import { AdminTopNavigation } from "@/components/layout/admin-top-navigation";
 
 export default async function AdminLayout({
   children,
@@ -32,15 +30,12 @@ export default async function AdminLayout({
   }
 
   return (
-    <AdminSidebarProvider>
-      <div className="min-h-screen bg-zinc-50 md:flex">
-        <Sidebar />
+    <div className="min-h-screen bg-zinc-50">
+      <AdminTopNavigation />
 
-        <div className="flex min-h-screen flex-1 flex-col">
-          <Header />
-          <main className="flex-1 p-4 md:p-6">{children}</main>
-        </div>
+      <div className="mx-auto max-w-7xl p-4 md:p-6">
+        <main>{children}</main>
       </div>
-    </AdminSidebarProvider>
+    </div>
   );
 }

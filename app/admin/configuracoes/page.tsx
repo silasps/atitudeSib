@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import WorkPostsManager from "@/components/admin/work-posts-manager";
 import { PageTitle } from "@/components/ui/page-title";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseBrowserClient } from "@/lib/supabase";
+import {
+  parseHeroMediaConfig,
+  parseSiteWorkContent,
+  serializeHeroMediaConfig,
+  serializeSiteWorkContent,
+  type SiteWorkPost,
+} from "@/lib/site-content";
 
 type SiteConfig = {
   id?: number;
@@ -28,7 +36,6 @@ type SiteConfig = {
   instagram_url: string;
   facebook_url: string;
   youtube_url: string;
-  hero_gallery_image_ids: string;
 };
 
 type GalleryItem = {
@@ -75,7 +82,6 @@ const emptyConfig: SiteConfig = {
   instagram_url: "",
   facebook_url: "",
   youtube_url: "",
-  hero_gallery_image_ids: "",
 };
 
 function SectionCard({
@@ -102,16 +108,6 @@ function SectionCard({
 
 function FieldHelp({ children }: { children: React.ReactNode }) {
   return <p className="mt-1 text-xs text-zinc-500">{children}</p>;
-}
-
-function parseHeroGalleryIds(value?: string) {
-  if (!value) {
-    return [];
-  }
-  return value
-    .split(",")
-    .map((item) => Number(item.trim()))
-    .filter((item) => Number.isFinite(item));
 }
 
 function ColorField({
@@ -156,33 +152,40 @@ function ColorField({
   );
 }
 
+function pickSupportedConfigFields<T extends Partial<SiteConfig>>(
+  payload: T,
+  supportedFields: string[]
+) {
+  const nextPayload: Partial<SiteConfig> = {};
+
+  for (const [key, value] of Object.entries(payload)) {
+    if (supportedFields.includes(key)) {
+      nextPayload[key as keyof SiteConfig] = value as never;
+    }
+  }
+
+  return nextPayload;
+}
+
 export default function ConfiguracoesPage() {
+  const [supabase] = useState(() => createSupabaseBrowserClient());
   const [config, setConfig] = useState<SiteConfig>(emptyConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("home");
+  const [availableConfigFields, setAvailableConfigFields] = useState<string[]>(
+    Object.keys(emptyConfig)
+  );
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(true);
   const [selectedHeroImageIds, setSelectedHeroImageIds] = useState<number[]>([]);
+  const [workSummary, setWorkSummary] = useState("");
+  const [workPosts, setWorkPosts] = useState<SiteWorkPost[]>([]);
 
-  async function fetchGallery() {
-    const { data, error } = await supabase
-      .from("site_gallery")
-      .select("id,image_url,legenda")
-      .eq("ativo", true)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error(error);
-      setGalleryItems([]);
-      setGalleryLoading(false);
-      return;
-    }
-
-    setGalleryItems((data ?? []) as GalleryItem[]);
-    setGalleryLoading(false);
-  }
+  const selectedHeroImages = selectedHeroImageIds
+    .map((id) => galleryItems.find((item) => item.id === id))
+    .filter((item): item is GalleryItem => Boolean(item));
 
   useEffect(() => {
     async function fetchConfig() {
@@ -199,21 +202,45 @@ export default function ConfiguracoesPage() {
       }
 
       if (data) {
-        setConfig({
+        const parsedConfig = {
           ...emptyConfig,
           ...data,
-        });
-        setSelectedHeroImageIds(
-          parseHeroGalleryIds(data.hero_gallery_image_ids)
+        } as SiteConfig & { hero_gallery_image_ids?: string | null };
+        const heroMediaConfig = parseHeroMediaConfig(
+          parsedConfig.hero_image_url,
+          parsedConfig.hero_gallery_image_ids
         );
+        const workContent = parseSiteWorkContent(parsedConfig.work_text);
+
+        setConfig({
+          ...emptyConfig,
+          ...parsedConfig,
+        });
+        setAvailableConfigFields(Object.keys(data));
+        setSelectedHeroImageIds(heroMediaConfig.galleryImageIds);
+        setWorkSummary(workContent.summary);
+        setWorkPosts(workContent.posts);
       }
 
-      await fetchGallery();
+      const { data: galleryData, error: galleryError } = await supabase
+        .from("site_gallery")
+        .select("id,image_url,legenda")
+        .eq("ativo", true)
+        .order("created_at", { ascending: false });
+
+      if (galleryError) {
+        console.error(galleryError);
+        setGalleryItems([]);
+      } else {
+        setGalleryItems((galleryData ?? []) as GalleryItem[]);
+      }
+
+      setGalleryLoading(false);
       setLoading(false);
     }
 
     fetchConfig();
-  }, []);
+  }, [supabase]);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -228,6 +255,30 @@ export default function ConfiguracoesPage() {
     );
   }
 
+  function moveHeroGalleryImage(id: number, direction: "left" | "right") {
+    setSelectedHeroImageIds((prev) => {
+      const currentIndex = prev.indexOf(id);
+
+      if (currentIndex === -1) {
+        return prev;
+      }
+
+      const targetIndex = direction === "left" ? currentIndex - 1 : currentIndex + 1;
+
+      if (targetIndex < 0 || targetIndex >= prev.length) {
+        return prev;
+      }
+
+      const reordered = [...prev];
+      [reordered[currentIndex], reordered[targetIndex]] = [
+        reordered[targetIndex],
+        reordered[currentIndex],
+      ];
+
+      return reordered;
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -235,30 +286,93 @@ export default function ConfiguracoesPage() {
 
     const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
     const phonePattern = /^\\(\\d{2}\\)\\s9\\s\\d{4}-\\d{4}$/;
+    const currentHeroMediaConfig = parseHeroMediaConfig(config.hero_image_url);
+    const activeTabPayloads: Record<TabKey, Partial<SiteConfig>> = {
+      home: {
+        project_name: config.project_name,
+        project_subtitle: config.project_subtitle,
+        hero_title: config.hero_title,
+        hero_subtitle: config.hero_subtitle,
+        hero_button_primary_text: config.hero_button_primary_text,
+        hero_button_primary_link: config.hero_button_primary_link,
+        hero_button_secondary_text: config.hero_button_secondary_text,
+        hero_button_secondary_link: config.hero_button_secondary_link,
+        hero_image_url: serializeHeroMediaConfig({
+          galleryImageIds: selectedHeroImageIds,
+          legacyImageUrl: currentHeroMediaConfig.legacyImageUrl,
+        }),
+      },
+      quemSomos: {
+        about_title: config.about_title,
+        about_text: config.about_text,
+      },
+      oQueEstamosFazendo: {
+        work_title: config.work_title,
+        work_text: serializeSiteWorkContent({
+          summary: workSummary,
+          posts: workPosts,
+        }),
+      },
+      facaParte: {
+        hero_button_primary_text: config.hero_button_primary_text,
+        hero_button_primary_link: config.hero_button_primary_link,
+        hero_button_secondary_text: config.hero_button_secondary_text,
+        hero_button_secondary_link: config.hero_button_secondary_link,
+      },
+      contato: {
+        contact_email: config.contact_email,
+        contact_phone: config.contact_phone,
+        contact_whatsapp: config.contact_whatsapp,
+        instagram_url: config.instagram_url,
+        facebook_url: config.facebook_url,
+        youtube_url: config.youtube_url,
+      },
+    };
+    const sharedPayload = pickSupportedConfigFields(
+      {
+        primary_color: config.primary_color,
+        secondary_color: config.secondary_color,
+        accent_color: config.accent_color,
+      },
+      availableConfigFields
+    );
+    const payload = {
+      ...sharedPayload,
+      ...pickSupportedConfigFields(
+        activeTabPayloads[activeTab],
+        availableConfigFields
+      ),
+    };
 
-    if (config.contact_email && !emailPattern.test(config.contact_email)) {
+    if (
+      activeTab === "contato" &&
+      config.contact_email &&
+      !emailPattern.test(config.contact_email)
+    ) {
       setMessage("Informe um e-mail válido.");
       setSaving(false);
       return;
     }
 
-    if (config.contact_phone && !phonePattern.test(config.contact_phone)) {
+    if (
+      activeTab === "contato" &&
+      config.contact_phone &&
+      !phonePattern.test(config.contact_phone)
+    ) {
       setMessage("Telefone deve seguir o padrão (41) 9 9999-9999.");
       setSaving(false);
       return;
     }
 
-    if (config.contact_whatsapp && !phonePattern.test(config.contact_whatsapp)) {
+    if (
+      activeTab === "contato" &&
+      config.contact_whatsapp &&
+      !phonePattern.test(config.contact_whatsapp)
+    ) {
       setMessage("WhatsApp deve seguir o padrão (41) 9 9999-9999.");
       setSaving(false);
       return;
     }
-
-    const payload = {
-      ...config,
-      hero_gallery_image_ids: selectedHeroImageIds.join(","),
-    };
-    delete (payload as { id?: number }).id;
 
     let error = null;
 
@@ -283,10 +397,13 @@ export default function ConfiguracoesPage() {
       return;
     }
 
-    setMessage("Configurações salvas com sucesso.");
+    const activeTabLabel =
+      pageTabs.find((tab) => tab.key === activeTab)?.label ?? "Aba atual";
+
+    setMessage(`${activeTabLabel} salva com sucesso.`);
     setConfig((prev) => ({
       ...prev,
-      hero_gallery_image_ids: selectedHeroImageIds.join(","),
+      ...payload,
     }));
     setSaving(false);
   }
@@ -377,7 +494,7 @@ export default function ConfiguracoesPage() {
 
                       <SectionCard
                         title="Hero e chamadas"
-                        description="Configure título, subtítulo e botões que impulsionam ações."
+                        description="Configure título, texto de apoio, botões e as imagens do carrossel principal."
                       >
                         <div>
                           <label className="mb-1 block text-sm font-medium text-zinc-700">
@@ -465,45 +582,11 @@ export default function ConfiguracoesPage() {
                             <FieldHelp>Exemplo: /quem-somos</FieldHelp>
                           </div>
                         </div>
-
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-zinc-700">
-                            Imagem principal
-                          </label>
-                          <input
-                            name="hero_image_url"
-                            value={config.hero_image_url}
-                            onChange={handleChange}
-                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                          />
-                          <FieldHelp>
-                            Use um link público e com boa resolução.
-                          </FieldHelp>
-                          {config.hero_image_url ? (
-                            <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-200">
-                              <img
-                                src={config.hero_image_url.trim()}
-                                alt="Prévia da imagem principal"
-                                className="h-64 w-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = "none";
-                                }}
-                              />
-                              <div className="p-3 text-sm text-zinc-500">
-                                Verifique se o link está publicamente disponível.
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-500">
-                              Nenhuma imagem configurada.
-                            </div>
-                          )}
-                        </div>
                       </SectionCard>
 
                       <SectionCard
-                        title="Imagens da home"
-                        description="Selecione as fotos da galeria que alimentam o slider principal."
+                        title="Carrossel do hero"
+                        description="Escolha entre as imagens já cadastradas na galeria quais devem aparecer no carrossel da página inicial."
                       >
                         {galleryLoading ? (
                           <p className="text-sm text-zinc-500">Carregando galeria...</p>
@@ -514,52 +597,128 @@ export default function ConfiguracoesPage() {
                                 Nenhuma imagem ativa na galeria ainda.
                               </p>
                             ) : (
-                              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                {galleryItems.map((item) => {
-                                  const selected = selectedHeroImageIds.includes(item.id);
-                                  return (
-                                    <label
-                                      key={item.id}
-                                      className={`group flex cursor-pointer flex-col gap-2 rounded-2xl border px-3 py-3 transition ${
-                                        selected
-                                          ? "border-emerald-500 bg-emerald-50"
-                                          : "border-zinc-200 bg-white"
-                                      }`}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={selected}
-                                        onChange={() => toggleHeroGalleryImage(item.id)}
-                                        className="sr-only"
-                                      />
-                                      <div className="relative h-40 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
-                                        <img
-                                          src={item.image_url}
-                                          alt={item.legenda ?? "Imagem da galeria"}
-                                          className="h-full w-full object-cover"
-                                        />
-                                        <span
-                                          className={`absolute top-2 right-2 inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-semibold ${
-                                            selected
-                                              ? "bg-emerald-600 text-white"
-                                              : "bg-black/60 text-white"
-                                          }`}
+                              <div className="space-y-5">
+                                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                                  <p className="text-sm font-semibold text-zinc-900">
+                                    Ordem atual do carrossel
+                                  </p>
+                                  <p className="mt-1 text-sm text-zinc-500">
+                                    A sequência abaixo define a ordem em que as imagens passam no hero.
+                                  </p>
+
+                                  {selectedHeroImages.length > 0 ? (
+                                    <div className="mt-4 space-y-3">
+                                      {selectedHeroImages.map((item, index) => (
+                                        <div
+                                          key={item.id}
+                                          className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-3 md:flex-row md:items-center md:justify-between"
                                         >
-                                          {selected ? "Selecionada" : "Selecionar"}
-                                        </span>
-                                      </div>
-                                      <p className="text-xs text-zinc-500 line-clamp-2">
-                                        {item.legenda ?? "Sem legenda definida"}
-                                      </p>
-                                    </label>
-                                  );
-                                })}
+                                          <div className="flex items-center gap-3">
+                                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-sm font-semibold text-white">
+                                              {index + 1}
+                                            </span>
+                                            <div
+                                              role="img"
+                                              aria-label={item.legenda ?? "Imagem selecionada do hero"}
+                                              className="h-14 w-20 rounded-xl bg-zinc-100 bg-cover bg-center"
+                                              style={{
+                                                backgroundImage: `url("${item.image_url}")`,
+                                              }}
+                                            />
+                                            <div className="min-w-0">
+                                              <p className="text-sm font-medium text-zinc-900">
+                                                {item.legenda ?? "Sem legenda definida"}
+                                              </p>
+                                              <p className="text-xs text-zinc-500">
+                                                Imagem #{item.id} da galeria
+                                              </p>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex gap-2">
+                                            <button
+                                              type="button"
+                                              onClick={() => moveHeroGalleryImage(item.id, "left")}
+                                              disabled={index === 0}
+                                              className="rounded-full border border-zinc-300 px-3 py-2 text-xs font-semibold text-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
+                                            >
+                                              Mover para antes
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => moveHeroGalleryImage(item.id, "right")}
+                                              disabled={index === selectedHeroImages.length - 1}
+                                              className="rounded-full border border-zinc-300 px-3 py-2 text-xs font-semibold text-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
+                                            >
+                                              Mover para depois
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 bg-white p-4 text-sm text-zinc-500">
+                                      Nenhuma imagem selecionada ainda. Escolha abaixo quais fotos da galeria devem aparecer no hero.
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                  {galleryItems.map((item) => {
+                                    const selected = selectedHeroImageIds.includes(item.id);
+                                    const selectedOrder = selected
+                                      ? selectedHeroImageIds.indexOf(item.id) + 1
+                                      : null;
+
+                                    return (
+                                      <label
+                                        key={item.id}
+                                        className={`group flex cursor-pointer flex-col gap-2 rounded-2xl border px-3 py-3 transition ${
+                                          selected
+                                            ? "border-emerald-500 bg-emerald-50"
+                                            : "border-zinc-200 bg-white"
+                                        }`}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={selected}
+                                          onChange={() => toggleHeroGalleryImage(item.id)}
+                                          className="sr-only"
+                                        />
+                                        <div className="relative h-40 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
+                                          <div
+                                            role="img"
+                                            aria-label={item.legenda ?? "Imagem da galeria"}
+                                            className="h-full w-full bg-cover bg-center"
+                                            style={{
+                                              backgroundImage: `url("${item.image_url}")`,
+                                            }}
+                                          />
+                                          <span
+                                            className={`absolute top-2 right-2 inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-semibold ${
+                                              selected
+                                                ? "bg-emerald-600 text-white"
+                                                : "bg-black/60 text-white"
+                                            }`}
+                                          >
+                                            {selectedOrder
+                                              ? `Selecionada #${selectedOrder}`
+                                              : "Selecionar"}
+                                          </span>
+                                        </div>
+                                        <p className="text-xs text-zinc-500 line-clamp-2">
+                                          {item.legenda ?? "Sem legenda definida"}
+                                        </p>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             )}
                           </>
                         )}
                         <FieldHelp>
-                          As imagens marcadas irão preencher o slider da página inicial.
+                          As imagens marcadas irão preencher o slider da página inicial. Se nada for selecionado, a home continua usando as imagens mais recentes da galeria.
                         </FieldHelp>
                       </SectionCard>
                     </>
@@ -603,11 +762,11 @@ export default function ConfiguracoesPage() {
                   {activeTab === "oQueEstamosFazendo" && (
                     <SectionCard
                       title="O que estamos fazendo"
-                      description="Destaque os projetos ativos e suas entregas."
+                      description="Monte publicacoes com titulo, descricao, tipo de midia, upload e pre-visualizacao para manter essa pagina sempre viva."
                     >
                       <div>
                         <label className="mb-1 block text-sm font-medium text-zinc-700">
-                          Título da atuação
+                          Titulo da pagina
                         </label>
                         <input
                           name="work_title"
@@ -616,24 +775,16 @@ export default function ConfiguracoesPage() {
                           className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
                         />
                         <FieldHelp>
-                          Cabeçalho da seção com os números e relatos.
+                          Esse titulo aparece no topo da pagina publica.
                         </FieldHelp>
                       </div>
-                      <div>
-                        <label className="mb-1 block text-sm font-medium text-zinc-700">
-                          Texto de impacto
-                        </label>
-                        <textarea
-                          name="work_text"
-                          value={config.work_text}
-                          onChange={handleChange}
-                          rows={4}
-                          className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                        />
-                        <FieldHelp>
-                          Use exemplos concretos das frentes operacionais.
-                        </FieldHelp>
-                      </div>
+
+                      <WorkPostsManager
+                        summary={workSummary}
+                        posts={workPosts}
+                        onSummaryChange={setWorkSummary}
+                        onPostsChange={setWorkPosts}
+                      />
                     </SectionCard>
                   )}
 
@@ -835,7 +986,7 @@ export default function ConfiguracoesPage() {
                     disabled={saving}
                     className="w-full rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
                   >
-                    {saving ? "Salvando..." : "Salvar configurações"}
+                    {saving ? "Salvando..." : "Salvar alteracoes desta aba"}
                   </button>
                   {message ? (
                     <p className="text-sm font-semibold text-zinc-600">{message}</p>

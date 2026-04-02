@@ -4,6 +4,11 @@ import { PublicFooter } from "@/components/layout/public-footer";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import HeroSlider, { HeroSlide } from "@/components/public/hero-slider";
 import StoryScroller from "@/components/public/story-scroller";
+import {
+  parseHeroMediaConfig,
+  parseSiteWorkContent,
+  workSummaryForPublicText,
+} from "@/lib/site-content";
 
 type SiteConfig = {
   project_name: string;
@@ -25,7 +30,7 @@ type SiteConfig = {
   contact_email: string;
   contact_phone: string;
   contact_whatsapp: string;
-  hero_gallery_image_ids: string;
+  hero_gallery_image_ids?: string | null;
 };
 
 const defaultConfig: SiteConfig = {
@@ -51,7 +56,6 @@ const defaultConfig: SiteConfig = {
   contact_email: "",
   contact_phone: "",
   contact_whatsapp: "",
-  hero_gallery_image_ids: "",
 };
 
 type GalleryItem = {
@@ -59,14 +63,6 @@ type GalleryItem = {
   image_url: string;
   legenda: string | null;
 };
-
-function parseHeroGalleryIds(value?: string | null) {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((item) => Number(item.trim()))
-    .filter((item) => Number.isFinite(item));
-}
 
 function formatMetric(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -95,7 +91,7 @@ export default async function HomePage() {
 
   const [
     configResult,
-    galleryResult,
+    recentGalleryResult,
     volunteerCountResult,
     activeStudentsResult,
     activeFunctionsResult,
@@ -127,11 +123,30 @@ export default async function HomePage() {
   ]);
 
   const config = (configResult.data as SiteConfig) ?? defaultConfig;
-  const gallery = (galleryResult.data ?? []) as GalleryItem[];
+  const recentGallery = (recentGalleryResult.data ?? []) as GalleryItem[];
+  const heroMediaConfig = parseHeroMediaConfig(
+    config.hero_image_url,
+    config.hero_gallery_image_ids
+  );
+  const workContent = parseSiteWorkContent(config.work_text);
+  const publicWorkSummary = workSummaryForPublicText(
+    workContent,
+    defaultConfig.work_text
+  );
 
-  const heroGalleryIds = parseHeroGalleryIds(config.hero_gallery_image_ids);
+  const heroGalleryIds = heroMediaConfig.galleryImageIds;
+  const heroGalleryResult =
+    heroGalleryIds.length > 0
+      ? await supabase
+          .from("site_gallery")
+          .select("id,image_url,legenda")
+          .eq("ativo", true)
+          .in("id", heroGalleryIds)
+      : { data: [] };
+
+  const heroGalleryItems = (heroGalleryResult.data ?? []) as GalleryItem[];
   const selectedGallery = heroGalleryIds
-    .map((id) => gallery.find((item) => item.id === id))
+    .map((id) => heroGalleryItems.find((item) => item.id === id))
     .filter((item): item is GalleryItem => Boolean(item));
 
   const heroSlides: HeroSlide[] =
@@ -140,14 +155,14 @@ export default async function HomePage() {
           imageUrl: item.image_url,
           caption: item.legenda ?? config.hero_subtitle,
         }))
-      : gallery.slice(0, 3).map((item) => ({
+      : recentGallery.slice(0, 3).map((item) => ({
           imageUrl: item.image_url,
           caption: item.legenda ?? config.hero_subtitle,
         }));
 
-  if (!heroSlides.length && config.hero_image_url) {
+  if (!heroSlides.length && heroMediaConfig.legacyImageUrl) {
     heroSlides.push({
-      imageUrl: config.hero_image_url,
+      imageUrl: heroMediaConfig.legacyImageUrl,
       caption: config.hero_subtitle,
     });
   }
@@ -175,8 +190,12 @@ export default async function HomePage() {
     },
   ];
 
-  const storyCards = gallery.slice(0, 4).map((item) => {
-    const segments = portraitStory(item, config.project_subtitle, config.work_text);
+  const storyCards = recentGallery.slice(0, 4).map((item) => {
+    const segments = portraitStory(
+      item,
+      config.project_subtitle,
+      publicWorkSummary
+    );
     return {
       id: item.id,
       imageUrl: item.image_url,
@@ -209,7 +228,7 @@ export default async function HomePage() {
           <div className="flex flex-col gap-2">
             <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">Números que comprovam</p>
             <h2 className="text-3xl font-bold text-zinc-900">Impacto em evidência</h2>
-            <p className="max-w-3xl text-sm text-zinc-600">{config.work_text}</p>
+            <p className="max-w-3xl text-sm text-zinc-600">{publicWorkSummary}</p>
           </div>
 
           <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">

@@ -1,112 +1,102 @@
-import { PublicHeader } from "@/components/layout/public-header";
+import WorkPostCard from "@/components/public/work-post-card";
 import { PublicFooter } from "@/components/layout/public-footer";
+import { PublicHeader } from "@/components/layout/public-header";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import {
+  parseSiteWorkContent,
+  workSummaryForPublicText,
+} from "@/lib/site-content";
 
-const ongoingProjects = [
-  {
-    title: "Artesanato",
-    details:
-      "10 idosos participam aos sábados das 9h30 em atividades como crochê e bordado, promovendo renda e convivência.",
-  },
-  {
-    title: "Pilates",
-    details:
-      "20 idosos treinam semanalmente, reduzindo dores musculares e fortalecendo autonomia nas atividades diárias.",
-  },
-  {
-    title: "Balé",
-    details:
-      "Três turmas aos sábados atendem crianças de 3 a 12 anos, reforçando disciplina física e cidadania.",
-  },
-  {
-    title: "Jiu-Jitsu",
-    details:
-      "Aulas às terças e quintas promovem inclusão de jovens em vulnerabilidade, com foco em respeito e convivência.",
-  },
-];
+type SiteConfig = {
+  project_name: string;
+  project_subtitle: string;
+  work_title: string;
+  work_text: string;
+  contact_email: string;
+  contact_phone: string;
+  contact_whatsapp: string;
+};
 
-const upcomingProjects = [
-  {
-    title: "Computação",
-    details:
-      "Aulas de informática básica aos sábados, promovendo alfabetização digital e criatividade.",
-  },
-  {
-    title: "Violão e teoria musical",
-    details:
-      "Desenvolve habilidades cognitivas, motoras e emocionais por meio da música aos sábados.",
-  },
-];
+const defaultConfig: SiteConfig = {
+  project_name: "O Atitude",
+  project_subtitle: "Projeto Escola Social",
+  work_title: "O que estamos fazendo",
+  work_text:
+    "Acompanhe as acoes, encontros e resultados que estao acontecendo no projeto.",
+  contact_email: "",
+  contact_phone: "(41) 9 99288-1025",
+  contact_whatsapp: "(41) 9 99288-1025",
+};
 
-const resourcesList = [
-  "Material didático e materiais específicos das atividades",
-  "Educadores sociais experientes",
-  "Lanches para os participantes",
-  "Equipe operacional e administrativa dedicada",
-];
+export default async function OQueEstamosFazendoPage() {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("site_config")
+    .select(
+      "project_name,project_subtitle,work_title,work_text,contact_email,contact_phone,contact_whatsapp"
+    )
+    .limit(1)
+    .maybeSingle();
 
-export default function OQueEstamosFazendoPage() {
+  const config = data
+    ? {
+        project_name: data.project_name ?? defaultConfig.project_name,
+        project_subtitle: data.project_subtitle ?? defaultConfig.project_subtitle,
+        work_title: data.work_title ?? defaultConfig.work_title,
+        work_text: data.work_text ?? defaultConfig.work_text,
+        contact_email: data.contact_email ?? defaultConfig.contact_email,
+        contact_phone: data.contact_phone ?? defaultConfig.contact_phone,
+        contact_whatsapp: data.contact_whatsapp ?? defaultConfig.contact_whatsapp,
+      }
+    : defaultConfig;
+
+  const workContent = parseSiteWorkContent(config.work_text);
+  const summary = workSummaryForPublicText(workContent, defaultConfig.work_text);
+
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <PublicHeader projectName="O Atitude" projectSubtitle="Projeto Escola Social" />
+      <PublicHeader
+        projectName={config.project_name}
+        projectSubtitle={config.project_subtitle}
+      />
 
-      <main className="space-y-12 px-6 py-12 md:px-10">
-        <section className="mx-auto max-w-5xl space-y-6 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">Projetos</p>
-          <h1 className="text-3xl font-bold text-zinc-900">
-            Atendemos crianças, adolescentes e idosos em vulnerabilidade
+      <main className="space-y-10 px-6 py-12 md:px-10">
+        <section className="mx-auto max-w-6xl rounded-[2rem] border border-zinc-200 bg-white p-8 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">
+            Pagina viva do projeto
+          </p>
+          <h1 className="mt-3 text-3xl font-bold text-zinc-900 md:text-4xl">
+            {config.work_title || defaultConfig.work_title}
           </h1>
-          <p className="text-sm text-zinc-600">
-            As atividades do O Atitude combinam educação, esporte, música e assistência social para promover
-            desenvolvimento humano.
+          <p className="mt-4 max-w-3xl text-sm leading-relaxed text-zinc-600">
+            {summary}
           </p>
         </section>
 
-        <section className="space-y-5">
-          <h2 className="text-2xl font-semibold text-zinc-900">Projetos em andamento</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            {ongoingProjects.map((project) => (
-              <article
-                key={project.title}
-                className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm"
-              >
-                <h3 className="text-xl font-semibold text-zinc-900">{project.title}</h3>
-                <p className="mt-3 text-sm text-zinc-600">{project.details}</p>
-              </article>
+        {workContent.posts.length > 0 ? (
+          <section className="mx-auto max-w-6xl space-y-6">
+            {workContent.posts.map((post) => (
+              <WorkPostCard key={post.id} post={post} />
             ))}
-          </div>
-        </section>
-
-        <section className="space-y-5">
-          <h2 className="text-2xl font-semibold text-zinc-900">Projetos em implantação</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            {upcomingProjects.map((project) => (
-              <article
-                key={project.title}
-                className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm"
-              >
-                <h3 className="text-xl font-semibold text-zinc-900">{project.title}</h3>
-                <p className="mt-3 text-sm text-zinc-600">{project.details}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="space-y-3 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-semibold text-zinc-900">Em cada projeto oferecemos</h2>
-          <ul className="space-y-2 text-sm text-zinc-700">
-            {resourcesList.map((item) => (
-              <li key={item}>• {item}</li>
-            ))}
-          </ul>
-        </section>
+          </section>
+        ) : (
+          <section className="mx-auto max-w-4xl rounded-[2rem] border border-dashed border-zinc-300 bg-white p-8 text-center shadow-sm">
+            <p className="text-sm font-semibold text-zinc-900">
+              Nenhuma publicacao foi cadastrada ainda.
+            </p>
+            <p className="mt-2 text-sm text-zinc-500">
+              Assim que a equipe adicionar novas postagens no painel administrativo, elas aparecerao aqui.
+            </p>
+          </section>
+        )}
       </main>
 
       <PublicFooter
-        projectName="O Atitude"
-        projectSubtitle="Projeto Escola Social"
-        contactEmail=""
-        contactPhone="+55 41 99288-1025"
-        contactWhatsapp="+55 41 99288-1025"
+        projectName={config.project_name}
+        projectSubtitle={config.project_subtitle}
+        contactEmail={config.contact_email}
+        contactPhone={config.contact_phone}
+        contactWhatsapp={config.contact_whatsapp}
       />
     </div>
   );
