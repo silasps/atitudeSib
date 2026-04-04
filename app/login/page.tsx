@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { getLoginDestination } from "@/lib/auth-utils";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,40 +40,7 @@ export default function LoginPage() {
       return;
     }
 
-    const { data: adminUser, error: adminError } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("id", user.id)
-      .eq("ativo", true)
-      .maybeSingle();
-
-    if (adminError) {
-      setMessage("Não foi possível verificar sua autorização.");
-      setLoading(false);
-      return;
-    }
-
-    let destination = "/acesso-negado";
-
-    if (adminUser) {
-      destination = "/admin";
-    } else {
-      const { data: turmas, error: turmasError } = await supabase
-        .from("turmas")
-        .select("id")
-        .eq("professor_user_id", user.id)
-        .limit(1);
-
-      if (turmasError) {
-        setMessage("Não foi possível verificar sua autorização.");
-        setLoading(false);
-        return;
-      }
-
-      if (turmas?.length) {
-        destination = "/professor/turmas";
-      }
-    }
+    const destination = await getLoginDestination(user, supabase);
 
     router.push(destination);
     router.refresh();

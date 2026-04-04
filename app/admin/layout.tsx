@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { resolveUserRole, isAdminRole } from "@/lib/auth-utils";
 import { AdminTopNavigation } from "@/components/layout/admin-top-navigation";
 
 export default async function AdminLayout({
@@ -18,14 +19,9 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  const { data: adminUser, error } = await supabase
-    .from("admin_users")
-    .select("*")
-    .eq("id", user.id)
-    .eq("ativo", true)
-    .maybeSingle();
+  const { role, isActive } = await resolveUserRole(user);
 
-  if (error || !adminUser) {
+  if (!isActive || !isAdminRole(role)) {
     redirect("/acesso-negado");
   }
 

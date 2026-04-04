@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { resolveUserRole, isProfessorOrAdminRole } from "@/lib/auth-utils";
 
 function textValue(value: FormDataEntryValue | null) {
   const parsed = String(value ?? "").trim();
@@ -24,10 +25,19 @@ async function getCurrentActorKey() {
     redirect("/login");
   }
 
+  const { role, isActive } = await resolveUserRole(user);
+  const allowed = isActive && isProfessorOrAdminRole(role);
+
+  if (!allowed) {
+    // Importante: para server actions, redirecionar evita vazamento de info.
+    redirect("/acesso-negado");
+  }
+
   return {
     supabase,
     actorKey: user.id,
     user,
+    role,
   };
 }
 
@@ -183,4 +193,177 @@ export async function fecharEncontroAction(formData: FormData) {
   revalidatePath(`/professor/turmas/${turmaId}`);
   revalidatePath(returnPath);
   redirect(returnPath);
+}
+
+// --- Materiais, atividades, comunicados e avaliações ---
+
+export async function createMaterialAction(formData: FormData) {
+  const { supabase, actorKey } = await getCurrentActorKey();
+
+  const turmaId = numberValue(formData.get("turma_id"));
+  const titulo = textValue(formData.get("titulo"));
+  const descricao = textValue(formData.get("descricao"));
+  const tipo = textValue(formData.get("tipo")) || "documento";
+  const visibilidade = textValue(formData.get("visibilidade")) || "todos";
+  const fileUrl = textValue(formData.get("file_url"));
+  const storagePath = textValue(formData.get("storage_path"));
+
+  if (!turmaId || !titulo) {
+    throw new Error("Turma ou titulo inválidos.");
+  }
+
+  const { error } = await supabase.from("turma_materiais").insert({
+    turma_id: turmaId,
+    titulo,
+    descricao,
+    tipo,
+    visibilidade,
+    file_url: fileUrl,
+    storage_path: storagePath,
+    criado_por: actorKey,
+  });
+
+  if (error) {
+    throw new Error(`Erro ao criar material: ${error.message}`);
+  }
+
+  revalidatePath(`/professor/turmas/${turmaId}`);
+  revalidatePath(`/professor/turmas/${turmaId}/materiais`);
+  return { ok: true };
+}
+
+export async function createAtividadeAction(formData: FormData) {
+  const { supabase, actorKey } = await getCurrentActorKey();
+
+  const turmaId = numberValue(formData.get("turma_id"));
+  const titulo = textValue(formData.get("titulo"));
+  const descricao = textValue(formData.get("descricao"));
+  const dataEntrega = textValue(formData.get("data_entrega"));
+  const anexosJson = textValue(formData.get("anexos_json"));
+  const status = textValue(formData.get("status")) || "ativa";
+
+  if (!turmaId || !titulo) {
+    throw new Error("Turma ou titulo inválidos.");
+  }
+
+  const { error } = await supabase.from("atividades_turma").insert({
+    turma_id: turmaId,
+    titulo,
+    descricao,
+    data_entrega: dataEntrega,
+    status,
+    anexos_json: anexosJson,
+    criado_por: actorKey,
+  });
+
+  if (error) {
+    throw new Error(`Erro ao criar atividade: ${error.message}`);
+  }
+
+  revalidatePath(`/professor/turmas/${turmaId}`);
+  revalidatePath(`/professor/turmas/${turmaId}/atividades`);
+  return { ok: true };
+}
+
+export async function createComunicadoAction(formData: FormData) {
+  const { supabase, actorKey } = await getCurrentActorKey();
+
+  const turmaId = numberValue(formData.get("turma_id"));
+  const titulo = textValue(formData.get("titulo"));
+  const corpo = textValue(formData.get("corpo"));
+  const publico = textValue(formData.get("publico")) || "todos";
+  const anexosJson = textValue(formData.get("anexos_json"));
+
+  if (!turmaId || !titulo || !corpo) {
+    throw new Error("Dados do comunicado inválidos.");
+  }
+
+  const { error } = await supabase.from("comunicados_turma").insert({
+    turma_id: turmaId,
+    titulo,
+    corpo,
+    publico,
+    anexos_json: anexosJson,
+    criado_por: actorKey,
+    publicado_em: new Date().toISOString(),
+  });
+
+  if (error) {
+    throw new Error(`Erro ao criar comunicado: ${error.message}`);
+  }
+
+  revalidatePath(`/professor/turmas/${turmaId}`);
+  revalidatePath(`/professor/turmas/${turmaId}/comunicados`);
+  return { ok: true };
+}
+
+export async function createAvaliacaoAction(formData: FormData) {
+  const { supabase, actorKey } = await getCurrentActorKey();
+
+  const alunoId = numberValue(formData.get("aluno_id"));
+  const turmaId = numberValue(formData.get("turma_id"));
+  const tipo = textValue(formData.get("tipo")) || "observacao";
+  const observacao = textValue(formData.get("observacao"));
+
+  if (!turmaId || !alunoId || !observacao) {
+    throw new Error("Dados da avaliação inválidos.");
+  }
+
+  const { error } = await supabase.from("avaliacoes_aluno").insert({
+    aluno_id: alunoId,
+    turma_id: turmaId,
+    tipo,
+    observacao,
+    criado_por: actorKey,
+  });
+
+  if (error) {
+    throw new Error(`Erro ao registrar avaliação: ${error.message}`);
+  }
+
+  revalidatePath(`/professor/turmas/${turmaId}`);
+  revalidatePath(`/professor/turmas/${turmaId}/avaliacoes`);
+  return { ok: true };
+}
+
+export async function registrarEntregaAction(formData: FormData) {
+  const { supabase, actorKey } = await getCurrentActorKey();
+
+  const atividadeId = numberValue(formData.get("atividade_id"));
+  const alunoId = numberValue(formData.get("aluno_id"));
+  const turmaId = numberValue(formData.get("turma_id"));
+  const status = textValue(formData.get("status")) || "entregue";
+  const nota = numberValue(formData.get("nota"));
+  const feedback = textValue(formData.get("feedback"));
+  const fileUrl = textValue(formData.get("file_url"));
+  const storagePath = textValue(formData.get("storage_path"));
+
+  if (!atividadeId || !alunoId || !turmaId) {
+    throw new Error("Dados da entrega inválidos.");
+  }
+
+  const { error } = await supabase.from("entregas_aluno").upsert(
+    {
+      atividade_id: atividadeId,
+      aluno_id: alunoId,
+      status,
+      nota,
+      feedback,
+      file_url: fileUrl,
+      storage_path: storagePath,
+      entregue_em: new Date().toISOString(),
+      enviado_por_user_id: actorKey,
+    },
+    {
+      onConflict: "atividade_id,aluno_id",
+    }
+  );
+
+  if (error) {
+    throw new Error(`Erro ao registrar entrega: ${error.message}`);
+  }
+
+  revalidatePath(`/professor/turmas/${turmaId}`);
+  revalidatePath(`/professor/turmas/${turmaId}/atividades`);
+  return { ok: true };
 }

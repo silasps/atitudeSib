@@ -68,6 +68,8 @@ export async function POST(req: Request) {
       email,
       password,
       email_confirm: true,
+      app_metadata: { app_role: role },
+      user_metadata: { nome: nome || null },
     });
 
     if (error || !data.user) {
@@ -82,7 +84,7 @@ export async function POST(req: Request) {
 
     const { error: insertError } = await supabaseAdmin
       .from("admin_users")
-      .insert([
+      .upsert(
         {
           id: data.user.id,
           email,
@@ -92,7 +94,8 @@ export async function POST(req: Request) {
           created_by_user_id: currentUser.id,
           created_by_user_email: currentUser.email ?? null,
         },
-      ]);
+        { onConflict: "id" }
+      );
 
     if (insertError) {
       return NextResponse.json(

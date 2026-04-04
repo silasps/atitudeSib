@@ -136,6 +136,13 @@ export default async function ProfessorTurmaDetalhePage({
             >
               Registrar presença
             </Link>
+            
+            <Link
+              href={`/professor/turmas/${turma.id}/avaliacoes`}
+              className="mt-3 inline-flex rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-900"
+            >
+              Avaliações
+            </Link>
           </div>
 
           <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm md:p-6">

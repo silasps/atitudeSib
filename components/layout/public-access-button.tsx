@@ -12,18 +12,22 @@ export function PublicAccessButton({
   onNavigate?: () => void;
 }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [targetHref, setTargetHref] = useState("/painel");
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
 
     supabase.auth.getSession().then(({ data }) => {
-      setIsLoggedIn(!!data.session);
+      const session = data.session;
+      setIsLoggedIn(!!session);
+      setTargetHref(resolveHref(session));
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(!!session);
+      setTargetHref(resolveHref(session));
     });
 
     return () => {
@@ -33,7 +37,7 @@ export function PublicAccessButton({
 
   return (
     <Link
-      href={isLoggedIn ? "/admin" : "/login"}
+      href={targetHref}
       onClick={onNavigate}
       className={
         mobile
@@ -44,4 +48,9 @@ export function PublicAccessButton({
       {isLoggedIn ? "Painel" : "Entrar"}
     </Link>
   );
+}
+
+function resolveHref(session: Awaited<ReturnType<ReturnType<typeof createSupabaseBrowserClient>["auth"]["getSession"]>>["data"]["session"]) {
+  if (!session) return "/painel";
+  return "/painel";
 }

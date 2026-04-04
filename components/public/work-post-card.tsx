@@ -44,7 +44,7 @@ export default function WorkPostCard({
         <div className={`${mediaHeight} bg-zinc-950`}>
           <video
             controls
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
             src={post.mediaItems[0]?.url}
           />
         </div>
@@ -62,13 +62,7 @@ export default function WorkPostCard({
       <article className="overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-sm">
         <div className={`relative ${mediaHeight} bg-zinc-100`}>
           {currentMedia ? (
-            <Image
-              src={currentMedia.url}
-              alt={post.title}
-              fill
-              unoptimized
-              className="object-cover"
-            />
+            <ResponsiveImageStage src={currentMedia.url} alt={post.title} />
           ) : null}
 
           {post.mediaItems.length > 1 ? (
@@ -126,7 +120,7 @@ export default function WorkPostCard({
       <article className="overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-sm">
         {textBlock}
         <div className={`relative ${mediaHeight} bg-zinc-100`}>
-          <Image src={imageUrl} alt={post.title} fill unoptimized className="object-cover" />
+          <ResponsiveImageStage src={imageUrl} alt={post.title} />
         </div>
       </article>
     );
@@ -136,7 +130,7 @@ export default function WorkPostCard({
     return (
       <article className="overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-sm">
         <div className={`relative ${mediaHeight} bg-zinc-100`}>
-          <Image src={imageUrl} alt={post.title} fill unoptimized className="object-cover" />
+          <ResponsiveImageStage src={imageUrl} alt={post.title} />
         </div>
         {textBlock}
       </article>
@@ -146,7 +140,7 @@ export default function WorkPostCard({
   if (position === "left" || position === "right") {
     const mediaBlock = (
       <div className={`relative min-h-[20rem] ${compact ? "md:min-h-[18rem]" : "md:min-h-[24rem]"} bg-zinc-100`}>
-        <Image src={imageUrl} alt={post.title} fill unoptimized className="object-cover" />
+        <ResponsiveImageStage src={imageUrl} alt={post.title} />
       </div>
     );
 
@@ -172,7 +166,7 @@ export default function WorkPostCard({
   return (
     <article className="overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-sm">
       <div className={`relative ${mediaHeight} bg-zinc-100`}>
-        <Image src={imageUrl} alt={post.title} fill unoptimized className="object-cover" />
+        <ResponsiveImageStage src={imageUrl} alt={post.title} />
         <div className={overlayClassName(position)}>
           <div className="max-w-xl rounded-[1.5rem] bg-black/55 p-5 text-white backdrop-blur-sm">
             <p className="text-2xl font-semibold">{post.title}</p>
@@ -205,6 +199,39 @@ function overlayClassName(position: WorkPostDescriptionPosition) {
   }
 
   return "absolute inset-x-0 bottom-0 flex justify-center p-5 md:p-8";
+}
+
+function ResponsiveImageStage({
+  src,
+  alt,
+}: {
+  src: string;
+  alt: string;
+}) {
+  return (
+    <>
+      <Image
+        src={src}
+        alt=""
+        fill
+        unoptimized
+        aria-hidden
+        className="object-cover opacity-35 blur-3xl scale-110"
+      />
+      <div className="absolute inset-0 bg-zinc-950/25" />
+      <div className="absolute inset-0 flex items-center justify-center p-4 md:p-6">
+        <div className="relative h-full w-full">
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            unoptimized
+            className="object-contain"
+          />
+        </div>
+      </div>
+    </>
+  );
 }
 
 function formatPostDate(value: string) {

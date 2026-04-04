@@ -181,6 +181,7 @@ export default function ConfiguracoesPage() {
   const [galleryLoading, setGalleryLoading] = useState(true);
   const [selectedHeroImageIds, setSelectedHeroImageIds] = useState<number[]>([]);
   const [workSummary, setWorkSummary] = useState("");
+  const [savedWorkSummary, setSavedWorkSummary] = useState("");
   const [workPosts, setWorkPosts] = useState<SiteWorkPost[]>([]);
 
   const selectedHeroImages = selectedHeroImageIds
@@ -219,6 +220,7 @@ export default function ConfiguracoesPage() {
         setAvailableConfigFields(Object.keys(data));
         setSelectedHeroImageIds(heroMediaConfig.galleryImageIds);
         setWorkSummary(workContent.summary);
+        setSavedWorkSummary(workContent.summary);
         setWorkPosts(workContent.posts);
       }
 
@@ -279,6 +281,74 @@ export default function ConfiguracoesPage() {
     });
   }
 
+  async function persistPublishedPosts(nextPosts: SiteWorkPost[]) {
+    const payload = pickSupportedConfigFields(
+      {
+        work_text: serializeSiteWorkContent({
+          summary: savedWorkSummary,
+          posts: nextPosts,
+        }),
+      },
+      availableConfigFields
+    );
+
+    if (!payload.work_text) {
+      return {
+        ok: false,
+        message:
+          "Nao foi possivel publicar as alteracoes porque o campo work_text nao existe na configuracao atual do banco.",
+      };
+    }
+
+    if (config.id) {
+      const result = await supabase
+        .from("site_config")
+        .update(payload)
+        .eq("id", config.id);
+
+      if (result.error) {
+        return {
+          ok: false,
+          message: `Erro ao publicar: ${result.error.message}`,
+        };
+      }
+    } else {
+      const result = await supabase
+        .from("site_config")
+        .insert([payload])
+        .select("id")
+        .single();
+
+      if (result.error) {
+        return {
+          ok: false,
+          message: `Erro ao publicar: ${result.error.message}`,
+        };
+      }
+
+      if (result.data?.id) {
+        setConfig((prev) => ({
+          ...prev,
+          id: result.data.id as number,
+        }));
+      }
+    }
+
+    setWorkPosts(nextPosts);
+    setConfig((prev) => ({
+      ...prev,
+      work_text: serializeSiteWorkContent({
+        summary: savedWorkSummary,
+        posts: nextPosts,
+      }),
+    }));
+
+    return {
+      ok: true,
+      message: "Publicacoes atualizadas.",
+    };
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -328,14 +398,17 @@ export default function ConfiguracoesPage() {
         youtube_url: config.youtube_url,
       },
     };
-    const sharedPayload = pickSupportedConfigFields(
-      {
-        primary_color: config.primary_color,
-        secondary_color: config.secondary_color,
-        accent_color: config.accent_color,
-      },
-      availableConfigFields
-    );
+    const sharedPayload =
+      activeTab === "oQueEstamosFazendo"
+        ? pickSupportedConfigFields(
+            {
+              primary_color: config.primary_color,
+              secondary_color: config.secondary_color,
+              accent_color: config.accent_color,
+            },
+            availableConfigFields
+          )
+        : {};
     const payload = {
       ...sharedPayload,
       ...pickSupportedConfigFields(
@@ -386,9 +459,18 @@ export default function ConfiguracoesPage() {
     } else {
       const result = await supabase
         .from("site_config")
-        .insert([payload]);
+        .insert([payload])
+        .select("id")
+        .single();
 
       error = result.error;
+
+      if (!result.error && result.data?.id) {
+        setConfig((prev) => ({
+          ...prev,
+          id: result.data.id as number,
+        }));
+      }
     }
 
     if (error) {
@@ -405,6 +487,9 @@ export default function ConfiguracoesPage() {
       ...prev,
       ...payload,
     }));
+    if (activeTab === "oQueEstamosFazendo") {
+      setSavedWorkSummary(workSummary);
+    }
     setSaving(false);
   }
 
@@ -760,32 +845,92 @@ export default function ConfiguracoesPage() {
                   )}
 
                   {activeTab === "oQueEstamosFazendo" && (
-                    <SectionCard
-                      title="O que estamos fazendo"
-                      description="Monte publicacoes com titulo, descricao, tipo de midia, upload e pre-visualizacao para manter essa pagina sempre viva."
-                    >
-                      <div>
-                        <label className="mb-1 block text-sm font-medium text-zinc-700">
-                          Titulo da pagina
-                        </label>
-                        <input
-                          name="work_title"
-                          value={config.work_title}
-                          onChange={handleChange}
-                          className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                        />
-                        <FieldHelp>
-                          Esse titulo aparece no topo da pagina publica.
-                        </FieldHelp>
-                      </div>
+                    <>
+                      <SectionCard
+                        title="Textos da pagina"
+                        description="Edite o titulo, o texto de abertura e a paleta de cores que ficam no topo da pagina publica."
+                      >
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Titulo da pagina
+                          </label>
+                          <input
+                            name="work_title"
+                            value={config.work_title}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                          <FieldHelp>
+                            Esse titulo aparece no topo da pagina publica.
+                          </FieldHelp>
+                        </div>
 
-                      <WorkPostsManager
-                        summary={workSummary}
-                        posts={workPosts}
-                        onSummaryChange={setWorkSummary}
-                        onPostsChange={setWorkPosts}
-                      />
-                    </SectionCard>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Texto de abertura da pagina
+                          </label>
+                          <textarea
+                            value={workSummary}
+                            onChange={(event) => setWorkSummary(event.target.value)}
+                            rows={3}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            placeholder="Apresente o que esta sendo feito no projeto e convide o visitante a acompanhar as publicacoes."
+                          />
+                          <FieldHelp>
+                            Esse texto aparece no topo da pagina publica, acima das publicacoes.
+                          </FieldHelp>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-3">
+                          <ColorField
+                            label="Cor principal"
+                            name="primary_color"
+                            value={config.primary_color}
+                            onChange={handleChange}
+                            help="Usada em textos principais e navbar."
+                          />
+                          <ColorField
+                            label="Cor secundaria"
+                            name="secondary_color"
+                            value={config.secondary_color}
+                            onChange={handleChange}
+                            help="Fundo de cards e secoes claras."
+                          />
+                          <ColorField
+                            label="Cor de destaque"
+                            name="accent_color"
+                            value={config.accent_color}
+                            onChange={handleChange}
+                            help="Botoes e elementos interativos."
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-3 border-t border-zinc-200 pt-4">
+                          <button
+                            type="submit"
+                            disabled={saving}
+                            className="w-full rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+                          >
+                            {saving ? "Salvando..." : "Salvar alteracoes desta aba"}
+                          </button>
+                          {message ? (
+                            <p className="text-sm font-semibold text-zinc-600">
+                              {message}
+                            </p>
+                          ) : null}
+                        </div>
+                      </SectionCard>
+
+                      <SectionCard
+                        title="Gestao de publicacoes"
+                        description="Crie, edite, reordene e publique atualizacoes do projeto em tempo real."
+                      >
+                        <WorkPostsManager
+                          posts={workPosts}
+                          onPersistPosts={persistPublishedPosts}
+                        />
+                      </SectionCard>
+                    </>
                   )}
 
                   {activeTab === "facaParte" && (
@@ -951,47 +1096,20 @@ export default function ConfiguracoesPage() {
                   )}
                 </div>
 
-                <SectionCard
-                  title="Paleta de cores"
-                  description="Defina cores que se repetem em todo o site."
-                >
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <ColorField
-                      label="Cor principal"
-                      name="primary_color"
-                      value={config.primary_color}
-                      onChange={handleChange}
-                      help="Usada em textos principais e navbar."
-                    />
-                    <ColorField
-                      label="Cor secundária"
-                      name="secondary_color"
-                      value={config.secondary_color}
-                      onChange={handleChange}
-                      help="Fundo de cards e seções claras."
-                    />
-                    <ColorField
-                      label="Cor de destaque"
-                      name="accent_color"
-                      value={config.accent_color}
-                      onChange={handleChange}
-                      help="Botões e elementos interativos."
-                    />
+                {activeTab !== "oQueEstamosFazendo" ? (
+                  <div className="flex flex-col gap-3 border-t border-zinc-200 pt-4">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="w-full rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+                    >
+                      {saving ? "Salvando..." : "Salvar alteracoes desta aba"}
+                    </button>
+                    {message ? (
+                      <p className="text-sm font-semibold text-zinc-600">{message}</p>
+                    ) : null}
                   </div>
-                </SectionCard>
-
-                <div className="flex flex-col gap-3 border-t border-zinc-200 pt-4">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="w-full rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
-                  >
-                    {saving ? "Salvando..." : "Salvar alteracoes desta aba"}
-                  </button>
-                  {message ? (
-                    <p className="text-sm font-semibold text-zinc-600">{message}</p>
-                  ) : null}
-                </div>
+                ) : null}
               </form>
             </div>
           </main>

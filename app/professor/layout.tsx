@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { resolveUserRole, isProfessorOrAdminRole } from "@/lib/auth-utils";
 import { Header } from "@/components/layout/header";
 import { AdminSidebarProvider } from "@/components/layout/admin-sidebar-context";
 import { ProfessorSidebar } from "@/components/layout/professor-sidebar";
@@ -17,6 +18,12 @@ export default async function ProfessorLayout({
 
   if (!user) {
     redirect("/login");
+  }
+
+  const { role, isActive } = await resolveUserRole(user);
+
+  if (!isActive || !isProfessorOrAdminRole(role)) {
+    redirect("/acesso-negado");
   }
 
   return (

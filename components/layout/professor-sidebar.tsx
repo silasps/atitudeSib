@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Home, School, X } from "lucide-react";
+import { School, BookOpen, Clipboard, Bell, BarChart3, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAdminSidebar } from "@/components/layout/admin-sidebar-context";
 
 const items = [
   { title: "Minhas turmas", href: "/professor/turmas", icon: School },
+  { title: "Materiais", href: "/professor/materiais", icon: BookOpen },
+  { title: "Atividades", href: "/professor/atividades", icon: Clipboard },
+  { title: "Comunicados", href: "/professor/comunicados", icon: Bell },
 ];
 
 export function ProfessorSidebar() {
@@ -46,18 +49,28 @@ export function ProfessorSidebar() {
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 p-4">
-          <Link
-            href="/professor/turmas"
-            onClick={closeMobile}
-            className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-              pathname === "/professor" || pathname === "/professor/turmas" || pathname.startsWith("/professor/turmas/")
-                ? "bg-zinc-900 text-white"
-                : "text-zinc-700 hover:bg-zinc-100"
-            }`}
-          >
-            <School size={18} />
-            Minhas turmas
-          </Link>
+          {items.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              pathname === item.href ||
+              pathname.startsWith(item.href + "/");
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={closeMobile}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                  isActive
+                    ? "bg-zinc-900 text-white"
+                    : "text-zinc-700 hover:bg-zinc-100"
+                }`}
+              >
+                <Icon size={18} />
+                {item.title}
+              </Link>
+            );
+          })}
         </nav>
       </aside>
     </>
