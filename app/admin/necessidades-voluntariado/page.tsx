@@ -40,7 +40,42 @@ export default function NecessidadesVoluntariadoPage() {
         return;
       }
 
-      setNecessidades((data ?? []) as NecessidadeComFuncao[]);
+      // Verificar necessidades expiradas e atualizar automaticamente
+      const necessidadesAtualizadas = await Promise.all(
+        (data ?? []).map(async (necessidade) => {
+          // Verificar se a necessidade tem data limite e se já expirou
+          if (
+            necessidade.data_limite_inscricao_em &&
+            necessidade.status === "aberta" &&
+            new Date(necessidade.data_limite_inscricao_em) < new Date()
+          ) {
+            // Atualizar necessidade expirada
+            const { error: updateError } = await supabase
+              .from("necessidades_voluntariado")
+              .update({
+                status: "fechada",
+                exibir_publicamente: false,
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", necessidade.id);
+
+            if (updateError) {
+              console.error("Erro ao atualizar necessidade expirada:", updateError);
+            } else {
+              // Retornar necessidade atualizada
+              return {
+                ...necessidade,
+                status: "fechada",
+                exibir_publicamente: false
+              };
+            }
+          }
+
+          return necessidade;
+        })
+      );
+
+      setNecessidades(necessidadesAtualizadas as NecessidadeComFuncao[]);
       setLoading(false);
     }
 
