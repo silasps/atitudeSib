@@ -11,6 +11,7 @@ const navItems = [
   { title: "Funções", href: "/admin/funcoes-voluntariado" },
   { title: "Necessidades", href: "/admin/necessidades-voluntariado" },
   { title: "Candidaturas", href: "/admin/candidaturas-voluntariado" },
+  { title: "Documentos", href: "/admin/documentos-voluntariado" },
   { title: "Turmas", href: "/admin/turmas" },
   { title: "Alunos", href: "/admin/alunos" },
   { title: "Usuários", href: "/admin/usuarios" },
@@ -61,7 +62,7 @@ export function AdminTopNavigation() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition cursor-pointer ${
                       active
                         ? "bg-zinc-900 text-white"
                         : "text-zinc-700 hover:bg-zinc-100"
@@ -77,7 +78,7 @@ export function AdminTopNavigation() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="hidden rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 lg:inline-flex"
+                className="hidden rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 lg:inline-flex cursor-pointer"
               >
                 Sair
               </button>
@@ -85,7 +86,7 @@ export function AdminTopNavigation() {
               <button
                 type="button"
                 onClick={toggleMobile}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-300 text-zinc-900 lg:hidden"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-300 text-zinc-900 lg:hidden cursor-pointer"
                 aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
               >
                 {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -100,7 +101,7 @@ export function AdminTopNavigation() {
           <button
             type="button"
             onClick={closeMobile}
-            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden cursor-pointer"
             aria-label="Fechar menu"
           />
           <div className="fixed inset-x-4 top-20 z-50 rounded-3xl border border-zinc-200 bg-white p-4 shadow-xl lg:hidden">
@@ -115,7 +116,7 @@ export function AdminTopNavigation() {
                     key={item.href}
                     href={item.href}
                     onClick={closeMobile}
-                    className={`rounded-xl px-4 py-3 text-sm font-medium transition ${
+                    className={`rounded-xl px-4 py-3 text-sm font-medium transition cursor-pointer ${
                       active
                         ? "bg-zinc-900 text-white"
                         : "text-zinc-700 hover:bg-zinc-100"
@@ -129,7 +130,7 @@ export function AdminTopNavigation() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="mt-2 rounded-xl border border-zinc-300 px-4 py-3 text-left text-sm font-medium text-zinc-900"
+                className="mt-2 rounded-xl border border-zinc-300 px-4 py-3 text-left text-sm font-medium text-zinc-900 cursor-pointer"
               >
                 Sair
               </button>

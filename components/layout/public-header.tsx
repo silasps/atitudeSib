@@ -103,7 +103,7 @@ export function PublicHeader({
 
             <Link
               href="/seja-voluntario"
-              className="rounded-xl bg-zinc-900 px-4 py-2 font-medium text-white"
+              className="rounded-xl bg-zinc-900 px-4 py-2 font-medium text-white cursor-pointer"
             >
               Seja voluntário
             </Link>
@@ -114,7 +114,7 @@ export function PublicHeader({
           <button
             type="button"
             onClick={toggleMobile}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-300 text-zinc-900 md:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-300 text-zinc-900 md:hidden cursor-pointer"
             aria-label="Abrir menu"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -127,7 +127,7 @@ export function PublicHeader({
           <button
             type="button"
             onClick={closeMenu}
-            className="fixed inset-0 z-40 bg-black/40 md:hidden"
+            className="fixed inset-0 z-40 bg-black/40 md:hidden cursor-pointer"
             aria-label="Fechar menu"
           />
           <div className="fixed inset-x-4 top-20 z-50 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl md:hidden">
@@ -142,7 +142,7 @@ export function PublicHeader({
                     key={item.href}
                     href={item.href}
                     onClick={closeMenu}
-                    className={`rounded-xl px-4 py-3 text-sm font-medium ${
+                    className={`rounded-xl px-4 py-3 text-sm font-medium cursor-pointer ${
                       active
                         ? "bg-zinc-900 text-white"
                         : "text-zinc-700 hover:bg-zinc-100"
@@ -156,7 +156,7 @@ export function PublicHeader({
               <Link
                 href="/seja-voluntario"
                 onClick={closeMenu}
-                className="mt-2 rounded-xl bg-zinc-900 px-4 py-3 text-center text-sm font-medium text-white"
+                className="mt-2 rounded-xl bg-zinc-900 px-4 py-3 text-center text-sm font-medium text-white cursor-pointer"
               >
                 Seja voluntário
               </Link>

@@ -76,14 +76,14 @@ export default function HeroSlider({
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href={primaryAction.href}
-            className="rounded-full px-6 py-3 text-sm font-semibold text-white transition"
+            className="rounded-full px-6 py-3 text-sm font-semibold text-white transition cursor-pointer"
             style={{ backgroundColor: accentColor }}
           >
             {primaryAction.label}
           </Link>
           <Link
             href={secondaryAction.href}
-            className="rounded-full border border-white/70 px-6 py-3 text-sm font-medium text-white"
+            className="rounded-full border border-white/70 px-6 py-3 text-sm font-medium text-white cursor-pointer"
           >
             {secondaryAction.label}
           </Link>
@@ -99,7 +99,7 @@ export default function HeroSlider({
           <button
             key={index}
             onClick={() => setActiveIndex(index)}
-            className={`h-2 w-10 rounded-full transition-colors ${
+            className={`h-2 w-10 rounded-full transition-colors cursor-pointer ${
               activeIndex === index ? "bg-white" : "bg-white/40"
             }`}
             aria-label={`Slide ${index + 1}`}

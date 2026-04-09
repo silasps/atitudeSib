@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { PageTitle } from "@/components/ui/page-title";
 import { supabase } from "@/lib/supabase";
+import { getNecessidadeSummary } from "@/lib/voluntariado-necessidade-content";
 import type { FuncaoVoluntariado, NecessidadeVoluntariado } from "@/types";
 
 type NecessidadeComFuncao = NecessidadeVoluntariado & {
@@ -185,7 +186,8 @@ export default function NecessidadesVoluntariadoPage() {
                       </h3>
 
                       <p className="mt-3 text-sm leading-6 text-zinc-600 line-clamp-3">
-                        {item.descricao || "Sem descrição cadastrada."}
+                        {getNecessidadeSummary(item.descricao) ||
+                          "Sem descrição cadastrada."}
                       </p>
                     </div>
 

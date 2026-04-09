@@ -1,6 +1,17 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getProfessorServerContext, getProfessorTurma } from "@/lib/professor-server";
+
+type TurmaRecord = {
+  id: number;
+  nome: string;
+};
+
+type AvaliacaoRecord = {
+  id: number;
+  titulo: string;
+  data?: string | null;
+};
 
 export default async function AvaliacoesPage({
   params,
@@ -14,28 +25,32 @@ export default async function AvaliacoesPage({
     notFound();
   }
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { dataSupabase, user, allowed } = await getProfessorServerContext();
 
   if (!user) {
     redirect("/login");
   }
 
-  const { data: turma } = await supabase
-    .from("turmas")
-    .select("*")
-    .eq("id", turmaId)
-    .eq("professor_user_id", user.id)
-    .maybeSingle();
+  if (!allowed) {
+    redirect("/acesso-negado");
+  }
+
+  if (!dataSupabase) {
+    throw new Error("Configuração do Supabase indisponível para leitura da turma.");
+  }
+
+  const turma = (await getProfessorTurma(
+    dataSupabase,
+    turmaId,
+    user.id
+  )) as TurmaRecord | null;
 
   if (!turma) {
     notFound();
   }
 
   // TODO: Implementar query para avaliacoes da turma
-  const avaliacoes: any[] = [];
+  const avaliacoes: AvaliacaoRecord[] = [];
 
   return (
     <div className="space-y-6">

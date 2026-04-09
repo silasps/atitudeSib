@@ -21,6 +21,9 @@ export async function createTurmaAction(formData: FormData) {
   const descricao = textValue(formData.get("descricao"));
   const professorUserId = textValue(formData.get("professor_user_id"));
   const diasHorarios = textValue(formData.get("dias_horarios"));
+  const horarioInicio = textValue(formData.get("horario_inicio"));
+  const horarioFim = textValue(formData.get("horario_fim"));
+  const duracaoHoras = numberValue(formData.get("duracao_horas"));
   const status = String(formData.get("status") ?? "ativa").trim();
 
   if (!nome) {
@@ -34,6 +37,9 @@ export async function createTurmaAction(formData: FormData) {
       descricao,
       professor_user_id: professorUserId,
       dias_horarios: diasHorarios,
+      horario_inicio: horarioInicio,
+      horario_fim: horarioFim,
+      duracao_horas: duracaoHoras,
       status,
     })
     .select("id")

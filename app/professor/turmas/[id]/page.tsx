@@ -1,6 +1,33 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getProfessorServerContext, getProfessorTurma } from "@/lib/professor-server";
+
+type TurmaRecord = {
+  id: number;
+  nome: string;
+  status?: string | null;
+  dias_horarios?: string | null;
+  descricao?: string | null;
+};
+
+type MatriculaRecord = {
+  id: number;
+  aluno_id: number;
+};
+
+type AlunoRecord = {
+  id: number;
+  nome?: string | null;
+  nome_responsavel?: string | null;
+  telefone_responsavel?: string | null;
+};
+
+type EncontroRecord = {
+  id: number;
+  data_encontro?: string | null;
+  observacoes?: string | null;
+  status?: string | null;
+};
 
 function parseDate(value?: string | null) {
   if (!value) return null;
@@ -40,31 +67,31 @@ export default async function ProfessorTurmaDetalhePage({
     notFound();
   }
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { dataSupabase, user, allowed } = await getProfessorServerContext();
 
   if (!user) {
     redirect("/login");
   }
 
-  const { data: turma, error: turmaError } = await supabase
-    .from("turmas")
-    .select("*")
-    .eq("id", turmaId)
-    .eq("professor_user_id", user.id)
-    .maybeSingle();
-
-  if (turmaError) {
-    throw new Error(`Erro ao carregar turma: ${turmaError.message}`);
+  if (!allowed) {
+    redirect("/acesso-negado");
   }
+
+  if (!dataSupabase) {
+    throw new Error("Configuração do Supabase indisponível para leitura da turma.");
+  }
+
+  const turma = (await getProfessorTurma(
+    dataSupabase,
+    turmaId,
+    user.id
+  )) as TurmaRecord | null;
 
   if (!turma) {
     notFound();
   }
 
-  const { data: matriculas, error: matriculasError } = await supabase
+  const { data: matriculas, error: matriculasError } = await dataSupabase
     .from("matriculas")
     .select("*")
     .eq("turma_id", turmaId)
@@ -75,18 +102,20 @@ export default async function ProfessorTurmaDetalhePage({
     throw new Error(`Erro ao carregar matrículas: ${matriculasError.message}`);
   }
 
-  const alunoIds = (matriculas ?? []).map((item: any) => Number(item.aluno_id));
+  const alunoIds = ((matriculas ?? []) as MatriculaRecord[]).map((item) =>
+    Number(item.aluno_id)
+  );
 
   const { data: alunos } = alunoIds.length
-    ? await supabase.from("alunos").select("*").in("id", alunoIds).order("nome")
-    : { data: [] as any[] };
+    ? await dataSupabase.from("alunos").select("*").in("id", alunoIds).order("nome")
+    : { data: [] as AlunoRecord[] };
 
-  const alunosById = new Map<string, any>();
-  for (const aluno of alunos ?? []) {
+  const alunosById = new Map<string, AlunoRecord>();
+  for (const aluno of (alunos ?? []) as AlunoRecord[]) {
     alunosById.set(String(aluno.id), aluno);
   }
 
-  const { data: encontros } = await supabase
+  const { data: encontros } = await dataSupabase
     .from("encontros_turma")
     .select("*")
     .eq("turma_id", turmaId)
@@ -132,14 +161,21 @@ export default async function ProfessorTurmaDetalhePage({
 
             <Link
               href={`/professor/turmas/${turma.id}/presenca`}
-              className="mt-5 inline-flex rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white"
+              className="mt-5 inline-flex rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white cursor-pointer"
             >
               Registrar presença
             </Link>
             
             <Link
+              href={`/professor/turmas/${turma.id}/relatorio-presenca`}
+              className="mt-3 inline-flex rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-900 cursor-pointer"
+            >
+              Relatório de presença
+            </Link>
+            
+            <Link
               href={`/professor/turmas/${turma.id}/avaliacoes`}
-              className="mt-3 inline-flex rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-900"
+              className="mt-3 inline-flex rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-900 cursor-pointer"
             >
               Avaliações
             </Link>
@@ -152,7 +188,7 @@ export default async function ProfessorTurmaDetalhePage({
 
             {matriculas?.length ? (
               <div className="mt-5 space-y-3">
-                {matriculas.map((matricula: any) => {
+                {(matriculas as MatriculaRecord[]).map((matricula) => {
                   const aluno = alunosById.get(String(matricula.aluno_id));
 
                   return (
@@ -188,7 +224,7 @@ export default async function ProfessorTurmaDetalhePage({
 
           {encontros?.length ? (
             <div className="mt-5 space-y-3">
-              {encontros.map((encontro: any) => (
+              {(encontros as EncontroRecord[]).map((encontro) => (
                 <div
                   key={encontro.id}
                   className="rounded-2xl border border-zinc-200 p-4"

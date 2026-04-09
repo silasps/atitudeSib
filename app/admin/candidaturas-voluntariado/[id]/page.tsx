@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
 import { PageTitle } from "@/components/ui/page-title";
 import { supabase } from "@/lib/supabase";
+import { VoluntariadoConsentReport } from "@/components/admin/voluntariado-consent-report";
+import { parseVoluntariadoAudit } from "@/lib/candidatura-voluntariado-audit";
 
 type CandidaturaDetalhe = {
   id: number;
@@ -134,6 +134,10 @@ export default function CandidaturaDetalhePage() {
       0
     );
   }, [candidatura]);
+
+  const auditInfo = useMemo(() => {
+    return parseVoluntariadoAudit(candidatura?.observacoes);
+  }, [candidatura?.observacoes]);
 
   async function handleAprovar() {
     if (!candidatura) return;
@@ -327,7 +331,7 @@ async function handleCreateUser() {
                 <div className="mt-6">
                   <h3 className="text-base font-semibold text-zinc-900">Observações</h3>
                   <p className="mt-2 text-sm leading-6 text-zinc-700">
-                    {candidatura.observacoes || "Nenhuma observação enviada."}
+                    {auditInfo.observacaoLivre || "Nenhuma observação enviada."}
                   </p>
                 </div>
               </section>
@@ -417,6 +421,14 @@ async function handleCreateUser() {
                 </div>
               </aside>
             </div>
+
+            <VoluntariadoConsentReport
+              candidatura={candidatura}
+              audit={auditInfo.audit}
+              observacaoLivre={auditInfo.observacaoLivre}
+              documentCenterHref="/admin/documentos-voluntariado"
+              documentEndpointBase={`/api/admin/voluntariado/candidaturas/${candidatura.id}/documento`}
+            />
             {showCreateUser && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
                 <div className="w-full max-w-md rounded-2xl bg-white p-4 md: p-6">

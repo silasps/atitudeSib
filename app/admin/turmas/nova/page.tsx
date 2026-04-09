@@ -109,19 +109,54 @@ export default async function NovaTurmaPage() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label
-            htmlFor="dias_horarios"
-            className="text-sm font-medium text-zinc-800"
-          >
-            Dias e horários
-          </label>
-          <input
-            id="dias_horarios"
-            name="dias_horarios"
-            className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-            placeholder="Ex.: Terça e quinta, 14h às 15h30"
-          />
+        <div className="grid gap-5 md:grid-cols-3">
+          <div className="space-y-2">
+            <label
+              htmlFor="horario_inicio"
+              className="text-sm font-medium text-zinc-800"
+            >
+              Horário de início
+            </label>
+            <input
+              id="horario_inicio"
+              name="horario_inicio"
+              type="time"
+              className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="horario_fim"
+              className="text-sm font-medium text-zinc-800"
+            >
+              Horário de fim
+            </label>
+            <input
+              id="horario_fim"
+              name="horario_fim"
+              type="time"
+              className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="duracao_horas"
+              className="text-sm font-medium text-zinc-800"
+            >
+              Duração (horas)
+            </label>
+            <input
+              id="duracao_horas"
+              name="duracao_horas"
+              type="number"
+              step="0.5"
+              min="0"
+              className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+              placeholder="Ex.: 1.5"
+            />
+          </div>
         </div>
 
         <div className="flex justify-end">

@@ -191,7 +191,7 @@ export default function NovoComunicadoPage() {
     <div className="space-y-6">
       <Link
         href="/professor/comunicados"
-        className="text-sm font-medium text-zinc-500 hover:text-zinc-900"
+        className="text-sm font-medium text-zinc-500 hover:text-zinc-900 cursor-pointer"
       >
         ← Voltar para comunicados
       </Link>
@@ -240,7 +240,7 @@ export default function NovoComunicadoPage() {
                 <button
                   type="button"
                   onClick={() => setPublico("todos")}
-                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${
+                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition cursor-pointer ${
                     publico === "todos"
                       ? "border-zinc-900 bg-zinc-50"
                       : "border-zinc-300 hover:border-zinc-400"
@@ -256,7 +256,7 @@ export default function NovoComunicadoPage() {
                 <button
                   type="button"
                   onClick={() => setPublico("alunos")}
-                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${
+                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition cursor-pointer ${
                     publico === "alunos"
                       ? "border-zinc-900 bg-zinc-50"
                       : "border-zinc-300 hover:border-zinc-400"
@@ -272,7 +272,7 @@ export default function NovoComunicadoPage() {
                 <button
                   type="button"
                   onClick={() => setPublico("responsaveis")}
-                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${
+                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition cursor-pointer ${
                     publico === "responsaveis"
                       ? "border-zinc-900 bg-zinc-50"
                       : "border-zinc-300 hover:border-zinc-400"
@@ -296,7 +296,7 @@ export default function NovoComunicadoPage() {
                 <button
                   type="button"
                   onClick={() => setTipo("texto")}
-                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${
+                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition cursor-pointer ${
                     tipo === "texto"
                       ? "border-zinc-900 bg-zinc-50"
                       : "border-zinc-300 hover:border-zinc-400"
@@ -312,7 +312,7 @@ export default function NovoComunicadoPage() {
                 <button
                   type="button"
                   onClick={() => setTipo("link")}
-                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${
+                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition cursor-pointer ${
                     tipo === "link"
                       ? "border-zinc-900 bg-zinc-50"
                       : "border-zinc-300 hover:border-zinc-400"
@@ -328,7 +328,7 @@ export default function NovoComunicadoPage() {
                 <button
                   type="button"
                   onClick={() => setTipo("imagem")}
-                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${
+                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition cursor-pointer ${
                     tipo === "imagem"
                       ? "border-zinc-900 bg-zinc-50"
                       : "border-zinc-300 hover:border-zinc-400"
@@ -344,7 +344,7 @@ export default function NovoComunicadoPage() {
                 <button
                   type="button"
                   onClick={() => setTipo("pdf")}
-                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${
+                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition cursor-pointer ${
                     tipo === "pdf"
                       ? "border-zinc-900 bg-zinc-50"
                       : "border-zinc-300 hover:border-zinc-400"
@@ -448,13 +448,13 @@ export default function NovoComunicadoPage() {
           <button
             type="submit"
             disabled={saving || turmas.length === 0}
-            className="flex-1 rounded-xl bg-zinc-900 px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"
+            className="flex-1 rounded-xl bg-zinc-900 px-6 py-3 text-sm font-semibold text-white disabled:opacity-60 cursor-pointer"
           >
             {saving ? "Publicando comunicado..." : "Publicar comunicado"}
           </button>
           <Link
             href="/professor/comunicados"
-            className="rounded-xl border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+            className="rounded-xl border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 cursor-pointer"
           >
             Cancelar
           </Link>

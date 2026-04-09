@@ -65,6 +65,7 @@ export type NecessidadeVoluntariado = {
   quantidade_total: number;
   quantidade_aprovada: number;
   data_limite_inscricao: string | null;
+  data_limite_inscricao_em?: string | null;
   status: string;
   exibir_publicamente: boolean;
   created_at: string;

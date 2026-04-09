@@ -74,7 +74,7 @@ export default function WorkPostCard({
                     prev === 0 ? post.mediaItems.length - 1 : prev - 1
                   )
                 }
-                className="absolute left-4 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-lg font-semibold text-white"
+                className="absolute left-4 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-lg font-semibold text-white cursor-pointer"
                 aria-label="Imagem anterior"
               >
                 ‹
@@ -86,7 +86,7 @@ export default function WorkPostCard({
                     prev === post.mediaItems.length - 1 ? 0 : prev + 1
                   )
                 }
-                className="absolute right-4 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-lg font-semibold text-white"
+                className="absolute right-4 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-lg font-semibold text-white cursor-pointer"
                 aria-label="Próxima imagem"
               >
                 ›
@@ -97,7 +97,7 @@ export default function WorkPostCard({
                     key={`${item.url}-${index}`}
                     type="button"
                     onClick={() => setActiveIndex(index)}
-                    className={`h-2.5 w-2.5 rounded-full ${
+                    className={`h-2.5 w-2.5 rounded-full cursor-pointer ${
                       index === safeIndex ? "bg-white" : "bg-white/45"
                     }`}
                     aria-label={`Ir para imagem ${index + 1}`}

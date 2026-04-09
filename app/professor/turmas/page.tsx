@@ -1,18 +1,38 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getProfessorServerContext } from "@/lib/professor-server";
+
+export const dynamic = "force-dynamic";
+
+type TurmaCard = {
+  id: number;
+  nome: string;
+  descricao?: string | null;
+  dias_horarios?: string | null;
+  status?: string | null;
+};
+
+type MatriculaResumo = {
+  id: number;
+  turma_id: number;
+};
 
 export default async function ProfessorTurmasPage() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { dataSupabase, user, allowed } = await getProfessorServerContext();
 
   if (!user) {
     redirect("/login");
   }
 
-  const { data: turmas, error } = await supabase
+  if (!allowed) {
+    redirect("/acesso-negado");
+  }
+
+  if (!dataSupabase) {
+    throw new Error("Configuração do Supabase indisponível para leitura das turmas.");
+  }
+
+  const { data: turmas, error } = await dataSupabase
     .from("turmas")
     .select("*")
     .eq("professor_user_id", user.id)
@@ -25,12 +45,12 @@ export default async function ProfessorTurmasPage() {
   const turmaIds = (turmas ?? []).map((item) => Number(item.id));
 
   const { data: matriculasAtivas } = turmaIds.length
-    ? await supabase
+    ? await dataSupabase
         .from("matriculas")
         .select("id, turma_id")
         .in("turma_id", turmaIds)
         .eq("status", "ativa")
-    : { data: [] as any[] };
+    : { data: [] as MatriculaResumo[] };
 
   const countByTurmaId = new Map<string, number>();
   for (const matricula of matriculasAtivas ?? []) {
@@ -46,11 +66,14 @@ export default async function ProfessorTurmasPage() {
         <p className="mt-1 text-sm text-zinc-600">
           Acompanhe as turmas atribuídas a você e registre a presença dos alunos.
         </p>
+        <p className="mt-3 text-xs text-zinc-500">
+          Conta conectada: {user.email || user.id}
+        </p>
       </div>
 
       {turmas?.length ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {turmas.map((turma: any) => {
+          {(turmas as TurmaCard[]).map((turma) => {
             const matriculados = countByTurmaId.get(String(turma.id)) ?? 0;
 
             return (
@@ -95,14 +118,14 @@ export default async function ProfessorTurmasPage() {
                 <div className="mt-5 flex flex-col gap-2">
                   <Link
                     href={`/professor/turmas/${turma.id}`}
-                    className="inline-flex items-center justify-center rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-medium text-zinc-900"
+                    className="inline-flex items-center justify-center rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-medium text-zinc-900 cursor-pointer"
                   >
                     Ver turma
                   </Link>
 
                   <Link
                     href={`/professor/turmas/${turma.id}/presenca`}
-                    className="inline-flex items-center justify-center rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white"
+                    className="inline-flex items-center justify-center rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white cursor-pointer"
                   >
                     Registrar presença
                   </Link>

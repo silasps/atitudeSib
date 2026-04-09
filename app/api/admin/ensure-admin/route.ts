@@ -60,10 +60,10 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, userId });
 }
 
-async function findUserIdByEmail(client: ReturnType<typeof createClient>, email: string) {
+async function findUserIdByEmail(client: any, email: string) {
   // Sem endpoint direto por e-mail; listUsers e filtra.
   const { data, error } = await client.auth.admin.listUsers({ page: 1, perPage: 200 });
   if (error) return null;
-  return data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase())?.id ?? null;
+  return data.users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase())?.id ?? null;
 }
 

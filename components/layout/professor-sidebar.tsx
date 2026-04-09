@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { School, BookOpen, Clipboard, Bell, BarChart3, X } from "lucide-react";
+import { School, BookOpen, Clipboard, Bell, BarChart3, CheckSquare, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAdminSidebar } from "@/components/layout/admin-sidebar-context";
 
 const items = [
   { title: "Minhas turmas", href: "/professor/turmas", icon: School },
+  { title: "Presenças", href: "/professor/presencas", icon: CheckSquare },
+  { title: "Relatórios", href: "/professor/relatorio-presencas", icon: BarChart3 },
   { title: "Materiais", href: "/professor/materiais", icon: BookOpen },
   { title: "Atividades", href: "/professor/atividades", icon: Clipboard },
   { title: "Comunicados", href: "/professor/comunicados", icon: Bell },
@@ -22,7 +24,7 @@ export function ProfessorSidebar() {
         <button
           type="button"
           onClick={closeMobile}
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          className="fixed inset-0 z-40 bg-black/40 md:hidden cursor-pointer"
           aria-label="Fechar menu"
         />
       ) : null}
@@ -41,7 +43,7 @@ export function ProfessorSidebar() {
           <button
             type="button"
             onClick={closeMobile}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-300 text-zinc-900 md:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-300 text-zinc-900 md:hidden cursor-pointer"
             aria-label="Fechar menu"
           >
             <X size={18} />
@@ -60,7 +62,7 @@ export function ProfessorSidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={closeMobile}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition cursor-pointer ${
                   isActive
                     ? "bg-zinc-900 text-white"
                     : "text-zinc-700 hover:bg-zinc-100"

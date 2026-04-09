@@ -36,16 +36,16 @@ export function PublicFooter({
           <h4 className="font-semibold text-zinc-900">Links rápidos</h4>
           <div className="mt-2 space-y-1 text-sm text-zinc-500">
             <p>
-              <Link href="/quem-somos">Quem somos</Link>
+              <Link href="/quem-somos" className="cursor-pointer">Quem somos</Link>
             </p>
             <p>
-              <Link href="/o-que-estamos-fazendo">O que fazemos</Link>
+              <Link href="/o-que-estamos-fazendo" className="cursor-pointer">O que fazemos</Link>
             </p>
             <p>
-              <Link href="/faca-parte">Faça parte</Link>
+              <Link href="/faca-parte" className="cursor-pointer">Faça parte</Link>
             </p>
             <p>
-              <Link href="/seja-voluntario">Seja voluntário</Link>
+              <Link href="/seja-voluntario" className="cursor-pointer">Seja voluntário</Link>
             </p>
           </div>
         </div>

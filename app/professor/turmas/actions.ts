@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { resolveUserRole, isProfessorOrAdminRole } from "@/lib/auth-utils";
+import { getProfessorServerContext, getProfessorTurma } from "@/lib/professor-server";
 
 function textValue(value: FormDataEntryValue | null) {
   const parsed = String(value ?? "").trim();
@@ -16,29 +15,109 @@ function numberValue(value: FormDataEntryValue | null) {
 }
 
 async function getCurrentActorKey() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { dataSupabase, user, allowed, role } = await getProfessorServerContext();
 
   if (!user) {
     redirect("/login");
   }
 
-  const { role, isActive } = await resolveUserRole(user);
-  const allowed = isActive && isProfessorOrAdminRole(role);
-
   if (!allowed) {
-    // Importante: para server actions, redirecionar evita vazamento de info.
     redirect("/acesso-negado");
   }
 
+  if (!dataSupabase) {
+    throw new Error("Configuração do Supabase indisponível para ações do professor.");
+  }
+
   return {
-    supabase,
+    supabase: dataSupabase,
     actorKey: user.id,
     user,
     role,
   };
+}
+
+async function ensureProfessorTurmaAccess(
+  supabase: Awaited<ReturnType<typeof getCurrentActorKey>>["supabase"],
+  turmaId: number,
+  userId: string
+) {
+  const turma = await getProfessorTurma(supabase, turmaId, userId, "id");
+
+  if (!turma) {
+    throw new Error("Turma não encontrada ou acesso negado.");
+  }
+}
+
+async function ensureMatriculasDaTurma(
+  supabase: Awaited<ReturnType<typeof getCurrentActorKey>>["supabase"],
+  turmaId: number,
+  matriculaIds: number[]
+) {
+  if (!matriculaIds.length) {
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("matriculas")
+    .select("id")
+    .eq("turma_id", turmaId)
+    .in("id", matriculaIds);
+
+  if (error) {
+    throw new Error(`Erro ao validar matrículas: ${error.message}`);
+  }
+
+  const allowedIds = new Set(
+    (data ?? []).map((item: { id: number | string }) => Number(item.id))
+  );
+
+  if (matriculaIds.some((id) => !allowedIds.has(id))) {
+    throw new Error("Foram informadas matrículas inválidas para esta turma.");
+  }
+}
+
+async function ensureAlunoDaTurma(
+  supabase: Awaited<ReturnType<typeof getCurrentActorKey>>["supabase"],
+  turmaId: number,
+  alunoId: number
+) {
+  const { data, error } = await supabase
+    .from("matriculas")
+    .select("id")
+    .eq("turma_id", turmaId)
+    .eq("aluno_id", alunoId)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Erro ao validar aluno da turma: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error("Aluno não vinculado à turma informada.");
+  }
+}
+
+async function ensureAtividadeDaTurma(
+  supabase: Awaited<ReturnType<typeof getCurrentActorKey>>["supabase"],
+  turmaId: number,
+  atividadeId: number
+) {
+  const { data, error } = await supabase
+    .from("atividades_turma")
+    .select("id")
+    .eq("id", atividadeId)
+    .eq("turma_id", turmaId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Erro ao validar atividade da turma: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error("Atividade não encontrada para a turma informada.");
+  }
 }
 
 export async function abrirEncontroAction(formData: FormData) {
@@ -53,6 +132,8 @@ export async function abrirEncontroAction(formData: FormData) {
   if (!turmaId || !dataEncontro) {
     throw new Error("Turma ou data inválida.");
   }
+
+  await ensureProfessorTurmaAccess(supabase, turmaId, actorKey);
 
   const { data: encontroExistente, error: buscaError } = await supabase
     .from("encontros_turma")
@@ -96,12 +177,16 @@ export async function salvarPresencasAction(formData: FormData) {
     throw new Error("Turma ou data inválida.");
   }
 
-  let { data: encontro, error: encontroError } = await supabase
+  await ensureProfessorTurmaAccess(supabase, turmaId, actorKey);
+
+  const { data: encontroInicial, error: encontroError } = await supabase
     .from("encontros_turma")
     .select("*")
     .eq("turma_id", turmaId)
     .eq("data_encontro", dataEncontro)
     .maybeSingle();
+
+  let encontro = encontroInicial;
 
   if (encontroError) {
     throw new Error(`Erro ao buscar encontro: ${encontroError.message}`);
@@ -153,6 +238,12 @@ export async function salvarPresencasAction(formData: FormData) {
     throw new Error("Nenhuma presença foi informada.");
   }
 
+  await ensureMatriculasDaTurma(
+    supabase,
+    turmaId,
+    rows.map((row) => row.matricula_id)
+  );
+
   const { error: upsertError } = await supabase.from("presencas").upsert(rows, {
     onConflict: "encontro_turma_id,matricula_id",
   });
@@ -167,7 +258,7 @@ export async function salvarPresencasAction(formData: FormData) {
 }
 
 export async function fecharEncontroAction(formData: FormData) {
-  const { supabase } = await getCurrentActorKey();
+  const { supabase, actorKey } = await getCurrentActorKey();
 
   const encontroId = numberValue(formData.get("encontro_id"));
   const turmaId = numberValue(formData.get("turma_id"));
@@ -178,13 +269,16 @@ export async function fecharEncontroAction(formData: FormData) {
     throw new Error("Encontro inválido.");
   }
 
+  await ensureProfessorTurmaAccess(supabase, turmaId, actorKey);
+
   const { error } = await supabase
     .from("encontros_turma")
     .update({
       status: "fechado",
       fechado_em: new Date().toISOString(),
     })
-    .eq("id", encontroId);
+    .eq("id", encontroId)
+    .eq("turma_id", turmaId);
 
   if (error) {
     throw new Error(`Erro ao fechar encontro: ${error.message}`);
@@ -211,6 +305,8 @@ export async function createMaterialAction(formData: FormData) {
   if (!turmaId || !titulo) {
     throw new Error("Turma ou titulo inválidos.");
   }
+
+  await ensureProfessorTurmaAccess(supabase, turmaId, actorKey);
 
   const { error } = await supabase.from("turma_materiais").insert({
     turma_id: turmaId,
@@ -246,6 +342,8 @@ export async function createAtividadeAction(formData: FormData) {
     throw new Error("Turma ou titulo inválidos.");
   }
 
+  await ensureProfessorTurmaAccess(supabase, turmaId, actorKey);
+
   const { error } = await supabase.from("atividades_turma").insert({
     turma_id: turmaId,
     titulo,
@@ -278,6 +376,8 @@ export async function createComunicadoAction(formData: FormData) {
     throw new Error("Dados do comunicado inválidos.");
   }
 
+  await ensureProfessorTurmaAccess(supabase, turmaId, actorKey);
+
   const { error } = await supabase.from("comunicados_turma").insert({
     turma_id: turmaId,
     titulo,
@@ -308,6 +408,9 @@ export async function createAvaliacaoAction(formData: FormData) {
   if (!turmaId || !alunoId || !observacao) {
     throw new Error("Dados da avaliação inválidos.");
   }
+
+  await ensureProfessorTurmaAccess(supabase, turmaId, actorKey);
+  await ensureAlunoDaTurma(supabase, turmaId, alunoId);
 
   const { error } = await supabase.from("avaliacoes_aluno").insert({
     aluno_id: alunoId,
@@ -341,6 +444,10 @@ export async function registrarEntregaAction(formData: FormData) {
   if (!atividadeId || !alunoId || !turmaId) {
     throw new Error("Dados da entrega inválidos.");
   }
+
+  await ensureProfessorTurmaAccess(supabase, turmaId, actorKey);
+  await ensureAtividadeDaTurma(supabase, turmaId, atividadeId);
+  await ensureAlunoDaTurma(supabase, turmaId, alunoId);
 
   const { error } = await supabase.from("entregas_aluno").upsert(
     {

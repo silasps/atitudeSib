@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
 import { PageTitle } from "@/components/ui/page-title";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
@@ -17,10 +15,36 @@ type CandidaturaComNecessidade = {
   estado: string | null;
   status: string;
   created_at: string;
+  termo_aceito: boolean;
+  termo_aceito_em: string | null;
   necessidade: {
     id: number;
     titulo_publico: string;
   } | null;
+};
+
+type CandidaturaRow = {
+  id: number | string | null;
+  nome_completo: string | null;
+  cpf: string | null;
+  email: string | null;
+  telefone: string | null;
+  cidade: string | null;
+  estado: string | null;
+  status: string | null;
+  created_at: string | null;
+  termo_aceito: boolean | null;
+  termo_aceito_em: string | null;
+  necessidade:
+    | {
+        id: number | string | null;
+        titulo_publico: string | null;
+      }
+    | Array<{
+        id: number | string | null;
+        titulo_publico: string | null;
+      }>
+    | null;
 };
 
 function formatDateTime(dateString: string) {
@@ -50,6 +74,8 @@ export default function CandidaturasVoluntariadoPage() {
           estado,
           status,
           created_at,
+          termo_aceito,
+          termo_aceito_em,
           necessidade:necessidade_id (
             id,
             titulo_publico
@@ -64,8 +90,14 @@ export default function CandidaturasVoluntariadoPage() {
         return;
       }
 
-      const normalized: CandidaturaComNecessidade[] = (data ?? []).map(
-        (item: any) => ({
+      const normalized: CandidaturaComNecessidade[] = (
+        (data ?? []) as CandidaturaRow[]
+      ).map((item) => {
+        const necessidadeValue = Array.isArray(item.necessidade)
+          ? item.necessidade[0]
+          : item.necessidade;
+
+        return {
           id: Number(item.id),
           nome_completo: item.nome_completo ?? "",
           cpf: item.cpf ?? "",
@@ -75,14 +107,16 @@ export default function CandidaturasVoluntariadoPage() {
           estado: item.estado ?? null,
           status: item.status ?? "pendente",
           created_at: item.created_at ?? "",
-          necessidade: item.necessidade
+          termo_aceito: item.termo_aceito === true,
+          termo_aceito_em: item.termo_aceito_em ?? null,
+          necessidade: necessidadeValue
             ? {
-                id: Number(item.necessidade.id),
-                titulo_publico: item.necessidade.titulo_publico ?? "",
+                id: Number(necessidadeValue.id),
+                titulo_publico: necessidadeValue.titulo_publico ?? "",
               }
             : null,
-        })
-      );
+        };
+      });
 
       setCandidaturas(normalized);
       setLoading(false);
@@ -101,12 +135,21 @@ export default function CandidaturasVoluntariadoPage() {
       <div className="flex min-h-screen">
         <div className="flex flex-1 flex-col">
           <main className="flex-1 p-4 md:p-4 md: p-6">
-            <PageTitle
-              title="Candidaturas de voluntariado"
-              subtitle="Acompanhe os candidatos que entraram no fluxo público"
-            />
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <PageTitle
+                title="Candidaturas de voluntariado"
+                subtitle="Acompanhe os candidatos que entraram no fluxo público"
+              />
 
-            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/admin/documentos-voluntariado"
+                className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-900"
+              >
+                Ver documentos assinados
+              </Link>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
               <button
                 onClick={() => setFiltro("pendente")}
                 className={`rounded-xl px-4 py-2 text-sm font-medium ${
@@ -201,6 +244,12 @@ export default function CandidaturasVoluntariadoPage() {
                             <p>
                             <span className="font-medium text-zinc-900">Recebida em:</span>{" "}
                             {formatDateTime(item.created_at)}
+                            </p>
+                            <p>
+                            <span className="font-medium text-zinc-900">Aceite registrado:</span>{" "}
+                            {item.termo_aceito
+                              ? formatDateTime(item.termo_aceito_em || item.created_at)
+                              : "Não"}
                             </p>
                         </div>
                     </Link>

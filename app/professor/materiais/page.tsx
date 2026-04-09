@@ -90,7 +90,7 @@ export default function MateriaisPage() {
         <h1 className="text-2xl font-bold text-zinc-900">Materiais</h1>
         <Link
           href="/professor/materiais/novo"
-          className="flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
+          className="flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 cursor-pointer"
         >
           <Plus size={16} />
           Novo material
@@ -108,7 +108,7 @@ export default function MateriaisPage() {
           </p>
           <Link
             href="/professor/materiais/novo"
-            className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-6 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
+            className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-6 py-3 text-sm font-semibold text-white hover:bg-zinc-800 cursor-pointer"
           >
             <Plus size={16} />
             Criar primeiro material
@@ -178,7 +178,7 @@ export default function MateriaisPage() {
                   )}
                 </div>
 
-                <button className="p-2 hover:bg-zinc-100 rounded-lg">
+                <button className="p-2 hover:bg-zinc-100 rounded-lg cursor-pointer">
                   <MoreVertical size={16} className="text-zinc-600" />
                 </button>
               </div>

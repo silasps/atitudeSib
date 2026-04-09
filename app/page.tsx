@@ -266,13 +266,13 @@ export default async function HomePage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/faca-parte"
-                className="rounded-full border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-900"
+                className="rounded-full border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-900 cursor-pointer"
               >
                 Conhecer programas
               </Link>
               <Link
                 href="/contato"
-                className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-semibold text-white"
+                className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-semibold text-white cursor-pointer"
                 style={{ backgroundColor: config.primary_color }}
               >
                 Conversar com a equipe
@@ -299,13 +299,13 @@ export default async function HomePage() {
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               href="/seja-voluntario"
-              className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-zinc-900"
+              className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-zinc-900 cursor-pointer"
             >
               Ver oportunidades
             </Link>
             <Link
               href="/contato"
-              className="rounded-full border border-white/60 px-6 py-3 text-sm font-semibold text-white"
+              className="rounded-full border border-white/60 px-6 py-3 text-sm font-semibold text-white cursor-pointer"
             >
               Agendar conversa
             </Link>
