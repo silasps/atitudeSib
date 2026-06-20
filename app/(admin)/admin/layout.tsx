@@ -1,5 +1,4 @@
 import { requireRole } from '@/lib/auth'
-import { createClient } from '@/lib/supabase-server'
 import { headers } from 'next/headers'
 import { resolveOrgFromHost, getSiteConfig } from '@/lib/tenant'
 import { COLOR_PALETTE } from '@/types'

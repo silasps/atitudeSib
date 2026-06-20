@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import { resolveOrgFromHost, getSiteConfig } from '@/lib/tenant'
 import { notFound } from 'next/navigation'
 import { COLOR_PALETTE } from '@/types'
+import Link from 'next/link'
 import FacaParteForm from './faca-parte-form'
 
 export default async function FacaPartePage() {
@@ -23,7 +24,7 @@ export default async function FacaPartePage() {
           <img src={siteConfig.logo_url} alt="" className="h-12 w-auto mx-auto mb-4 object-contain" />
         )}
         <h1 className="text-2xl font-bold">{tenantResult.org.nome}</h1>
-        <a href="/" className="text-white/70 text-sm mt-1 inline-block hover:text-white">← Voltar ao site</a>
+        <Link href="/" className="text-white/70 text-sm mt-1 inline-block hover:text-white">← Voltar ao site</Link>
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-12">

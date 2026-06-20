@@ -64,7 +64,7 @@ export default function DominioForm({ dominios }: Props) {
           <li>2. Acesse o painel do seu provedor de DNS (Registro.br, Cloudflare, etc.)</li>
           <li>3. Crie um registro <strong>CNAME</strong> apontando para: <code className="bg-blue-100 px-1 rounded font-mono text-xs">ostrichsocial.com.br</code></li>
           <li>4. Aguarde até 24h para propagação do DNS</li>
-          <li>5. O status mudará para "Verificado" automaticamente na próxima visita ao domínio</li>
+          <li>5. O status mudará para &ldquo;Verificado&rdquo; automaticamente na próxima visita ao domínio</li>
         </ol>
       </div>
 

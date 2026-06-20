@@ -6,7 +6,6 @@ import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 
 export default function AprovarSolicitacaoButton({
   solicitacaoId,
-  nome,
 }: {
   solicitacaoId: string
   nome: string
