@@ -1,21 +1,25 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createTurmaAction } from "../actions";
-
-function getUserLabel(user: any) {
-  return user?.full_name || user?.nome || user?.email || "Sem identificação";
-}
+import { TurmaScheduleEditor } from "@/components/admin/turma-schedule-editor";
+import {
+  type AdminDisplayUser,
+  getAdminUserAbbreviatedName,
+  getAdminUserIdentifier,
+  isAssignableProfessorUser,
+  sortAdminUsersByName,
+} from "@/lib/admin-user-display";
 
 export default async function NovaTurmaPage() {
   const supabase = await createSupabaseServerClient();
 
   const { data: adminUsers } = await supabase.from("admin_users").select("*");
 
-  const professores = (adminUsers ?? []).filter((user: any) => {
-    const active = user.is_active !== false;
-    const role = String(user.role ?? "");
-    return active && (role === "professor" || role === "admin");
-  });
+  const professores = sortAdminUsersByName(
+    ((adminUsers ?? []) as AdminDisplayUser[]).filter((user) =>
+      isAssignableProfessorUser(user)
+    )
+  );
 
   return (
     <div className="space-y-6">
@@ -27,7 +31,7 @@ export default async function NovaTurmaPage() {
 
         <Link
           href="/admin/turmas"
-          className="rounded-2xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
+          className="cursor-pointer rounded-2xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
         >
           Voltar
         </Link>
@@ -77,16 +81,16 @@ export default async function NovaTurmaPage() {
             <select
               id="professor_user_id"
               name="professor_user_id"
-              className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+              className="w-full cursor-pointer rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
               defaultValue=""
             >
               <option value="">Selecionar depois</option>
-              {professores.map((user: any) => (
+              {professores.map((user) => (
                 <option
-                  key={String(user.user_id ?? user.id ?? "")}
-                  value={String(user.user_id ?? user.id ?? "")}
-                  >
-                  {getUserLabel(user)} ({user.role})
+                  key={getAdminUserIdentifier(user)}
+                  value={getAdminUserIdentifier(user)}
+                >
+                  {getAdminUserAbbreviatedName(user)} ({user.role})
                 </option>
               ))}
             </select>
@@ -100,7 +104,7 @@ export default async function NovaTurmaPage() {
               id="status"
               name="status"
               defaultValue="ativa"
-              className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+              className="w-full cursor-pointer rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
             >
               <option value="ativa">Ativa</option>
               <option value="inativa">Inativa</option>
@@ -109,60 +113,12 @@ export default async function NovaTurmaPage() {
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          <div className="space-y-2">
-            <label
-              htmlFor="horario_inicio"
-              className="text-sm font-medium text-zinc-800"
-            >
-              Horário de início
-            </label>
-            <input
-              id="horario_inicio"
-              name="horario_inicio"
-              type="time"
-              className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label
-              htmlFor="horario_fim"
-              className="text-sm font-medium text-zinc-800"
-            >
-              Horário de fim
-            </label>
-            <input
-              id="horario_fim"
-              name="horario_fim"
-              type="time"
-              className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label
-              htmlFor="duracao_horas"
-              className="text-sm font-medium text-zinc-800"
-            >
-              Duração (horas)
-            </label>
-            <input
-              id="duracao_horas"
-              name="duracao_horas"
-              type="number"
-              step="0.5"
-              min="0"
-              className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-              placeholder="Ex.: 1.5"
-            />
-          </div>
-        </div>
+        <TurmaScheduleEditor />
 
         <div className="flex justify-end">
           <button
             type="submit"
-            className="rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white"
+            className="cursor-pointer rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white"
           >
             Salvar turma
           </button>

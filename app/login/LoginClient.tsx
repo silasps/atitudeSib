@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { useSearchParams } from "next/navigation";
 
 export default function LoginClient() {
@@ -11,6 +11,16 @@ export default function LoginClient() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function handleFormKeyDown(event: KeyboardEvent<HTMLFormElement>) {
+    if (event.key !== "Enter" || loading) {
+      return;
+    }
+
+    event.preventDefault();
+    formRef.current?.requestSubmit();
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-100 p-4 md:p-6">
@@ -21,10 +31,12 @@ export default function LoginClient() {
         </p>
 
         <form
+          ref={formRef}
           action="/api/auth/login"
           method="POST"
           className="mt-6 space-y-4"
           onSubmit={() => setLoading(true)}
+          onKeyDown={handleFormKeyDown}
         >
           <input type="hidden" name="redirect" value={redirect} />
 

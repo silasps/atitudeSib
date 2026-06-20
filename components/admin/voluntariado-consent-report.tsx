@@ -34,6 +34,10 @@ function formatDateTime(dateString: string | null) {
   return new Date(dateString).toLocaleString("pt-BR");
 }
 
+function formatChangeValue(value: string | null) {
+  return value || "Não informado";
+}
+
 export function VoluntariadoConsentReport({
   candidatura,
   audit,
@@ -42,6 +46,7 @@ export function VoluntariadoConsentReport({
   documentEndpointBase,
 }: CandidaturaReportProps) {
   const [downloading, setDownloading] = useState(false);
+  const changeHistory = audit?.changeHistory?.slice().reverse() ?? [];
 
   async function handleDownload() {
     setDownloading(true);
@@ -163,6 +168,36 @@ export function VoluntariadoConsentReport({
         });
       } else {
         currentY += 2;
+      }
+
+      if (changeHistory.length) {
+        writeText("Alterações administrativas", {
+          fontSize: 13,
+          fontStyle: "bold",
+          spacingAfter: 2,
+        });
+
+        changeHistory.forEach((entry) => {
+          writeText(
+            `${formatDateTime(entry.changedAt)} · ${
+              entry.actorEmail || entry.actorUserId
+            }`,
+            {
+              fontStyle: "bold",
+              spacingAfter: 2,
+            }
+          );
+
+          entry.changes.forEach((change) => {
+            writeText(
+              `${change.label}: ${formatChangeValue(
+                change.previousValue
+              )} -> ${formatChangeValue(change.nextValue)}`
+            );
+          });
+
+          currentY += 2;
+        });
       }
 
       writeText("Trilha de auditoria", {
@@ -350,6 +385,40 @@ export function VoluntariadoConsentReport({
             <p className="mt-3 text-sm leading-7 text-zinc-700">
               {observacaoLivre}
             </p>
+          </div>
+        ) : null}
+
+        {changeHistory.length ? (
+          <div className="rounded-2xl bg-zinc-50 p-4">
+            <p className="text-sm font-medium text-zinc-900">
+              Histórico de alterações administrativas
+            </p>
+            <div className="mt-3 space-y-4">
+              {changeHistory.map((entry) => (
+                <div
+                  key={`${entry.changedAt}-${entry.actorUserId}`}
+                  className="rounded-2xl border border-zinc-200 bg-white p-4"
+                >
+                  <p className="text-sm font-medium text-zinc-900">
+                    {formatDateTime(entry.changedAt)}
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    Alterado por {entry.actorEmail || entry.actorUserId}
+                  </p>
+                  <div className="mt-3 space-y-2 text-sm text-zinc-700">
+                    {entry.changes.map((change) => (
+                      <p key={`${entry.changedAt}-${change.field}`}>
+                        <span className="font-medium text-zinc-900">
+                          {change.label}:
+                        </span>{" "}
+                        {formatChangeValue(change.previousValue)} {" -> "}{" "}
+                        {formatChangeValue(change.nextValue)}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>

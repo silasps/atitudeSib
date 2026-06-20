@@ -5,11 +5,17 @@ import WorkPostsManager from "@/components/admin/work-posts-manager";
 import { PageTitle } from "@/components/ui/page-title";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import {
+  defaultInstitutionalContent,
+  mergeInstitutionalContent,
   parseHeroMediaConfig,
+  parseInstitutionalContent,
   parseSiteWorkContent,
+  paragraphsToTextArea,
   serializeHeroMediaConfig,
+  serializeInstitutionalContent,
   serializeSiteWorkContent,
   type SiteWorkPost,
+  textAreaToParagraphs,
 } from "@/lib/site-content";
 
 type SiteConfig = {
@@ -183,6 +189,9 @@ export default function ConfiguracoesPage() {
   const [workSummary, setWorkSummary] = useState("");
   const [savedWorkSummary, setSavedWorkSummary] = useState("");
   const [workPosts, setWorkPosts] = useState<SiteWorkPost[]>([]);
+  const [institutionalContent, setInstitutionalContent] = useState(
+    defaultInstitutionalContent
+  );
 
   const selectedHeroImages = selectedHeroImageIds
     .map((id) => galleryItems.find((item) => item.id === id))
@@ -212,6 +221,10 @@ export default function ConfiguracoesPage() {
           parsedConfig.hero_gallery_image_ids
         );
         const workContent = parseSiteWorkContent(parsedConfig.work_text);
+        const parsedInstitutionalContent = mergeInstitutionalContent(
+          defaultInstitutionalContent,
+          parseInstitutionalContent(parsedConfig.about_text)
+        );
 
         setConfig({
           ...emptyConfig,
@@ -222,6 +235,7 @@ export default function ConfiguracoesPage() {
         setWorkSummary(workContent.summary);
         setSavedWorkSummary(workContent.summary);
         setWorkPosts(workContent.posts);
+        setInstitutionalContent(parsedInstitutionalContent);
       }
 
       const { data: galleryData, error: galleryError } = await supabase
@@ -249,6 +263,16 @@ export default function ConfiguracoesPage() {
   ) {
     const { name, value } = e.target;
     setConfig((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function updateInstitutionalField(
+    field: keyof typeof institutionalContent,
+    value: string | string[]
+  ) {
+    setInstitutionalContent((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   }
 
   function toggleHeroGalleryImage(id: number) {
@@ -374,7 +398,7 @@ export default function ConfiguracoesPage() {
       },
       quemSomos: {
         about_title: config.about_title,
-        about_text: config.about_text,
+        about_text: serializeInstitutionalContent(institutionalContent),
       },
       oQueEstamosFazendo: {
         work_title: config.work_title,
@@ -390,6 +414,7 @@ export default function ConfiguracoesPage() {
         hero_button_secondary_link: config.hero_button_secondary_link,
       },
       contato: {
+        about_text: serializeInstitutionalContent(institutionalContent),
         contact_email: config.contact_email,
         contact_phone: config.contact_phone,
         contact_whatsapp: config.contact_whatsapp,
@@ -810,38 +835,213 @@ export default function ConfiguracoesPage() {
                   )}
 
                   {activeTab === "quemSomos" && (
-                    <SectionCard
-                      title="Quem somos"
-                      description="Conte quem é O Atitude e o contexto social atendido."
-                    >
-                      <div>
-                        <label className="mb-1 block text-sm font-medium text-zinc-700">
-                          Título
-                        </label>
-                        <input
-                          name="about_title"
-                          value={config.about_title}
-                          onChange={handleChange}
-                          className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                        />
-                        <FieldHelp>Título exibido na seção institucional.</FieldHelp>
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-sm font-medium text-zinc-700">
-                          Texto
-                        </label>
-                        <textarea
-                          name="about_text"
-                          value={config.about_text}
-                          onChange={handleChange}
-                          rows={4}
-                          className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                        />
-                        <FieldHelp>
-                          Conte a trajetória, missão e público atendido.
-                        </FieldHelp>
-                      </div>
-                    </SectionCard>
+                    <>
+                      <SectionCard
+                        title="Narrativa institucional"
+                        description="Esses campos alimentam a home e a pagina Quem somos com um discurso mais forte e organizado."
+                      >
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Titulo principal
+                          </label>
+                          <input
+                            name="about_title"
+                            value={config.about_title}
+                            onChange={handleChange}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                          <FieldHelp>
+                            Titulo exibido no topo da pagina institucional.
+                          </FieldHelp>
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Frase de impacto institucional
+                          </label>
+                          <textarea
+                            value={institutionalContent.impactLabel}
+                            onChange={(event) =>
+                              updateInstitutionalField(
+                                "impactLabel",
+                                event.target.value
+                              )
+                            }
+                            rows={3}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                          <FieldHelp>
+                            Resumo forte usado no topo das paginas publicas.
+                          </FieldHelp>
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Apresentacao
+                          </label>
+                          <textarea
+                            value={paragraphsToTextArea(institutionalContent.presentation)}
+                            onChange={(event) =>
+                              updateInstitutionalField(
+                                "presentation",
+                                textAreaToParagraphs(event.target.value)
+                              )
+                            }
+                            rows={8}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                          <FieldHelp>
+                            Separe paragrafos com uma linha em branco.
+                          </FieldHelp>
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-zinc-700">
+                            Resumo para SEO
+                          </label>
+                          <textarea
+                            value={institutionalContent.seoSummary}
+                            onChange={(event) =>
+                              updateInstitutionalField("seoSummary", event.target.value)
+                            }
+                            rows={3}
+                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                          />
+                          <FieldHelp>
+                            Descricao curta usada em compartilhamento e mecanismos de busca.
+                          </FieldHelp>
+                        </div>
+                      </SectionCard>
+
+                      <SectionCard
+                        title="Missao e contexto"
+                        description="Organize a proposta do projeto, o publico atendido e o territorio."
+                      >
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Missao
+                            </label>
+                            <textarea
+                              value={institutionalContent.mission}
+                              onChange={(event) =>
+                                updateInstitutionalField("mission", event.target.value)
+                              }
+                              rows={5}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Visao
+                            </label>
+                            <textarea
+                              value={institutionalContent.vision}
+                              onChange={(event) =>
+                                updateInstitutionalField("vision", event.target.value)
+                              }
+                              rows={5}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-3">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Publico atendido
+                            </label>
+                            <textarea
+                              value={institutionalContent.audience}
+                              onChange={(event) =>
+                                updateInstitutionalField("audience", event.target.value)
+                              }
+                              rows={4}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Territorio
+                            </label>
+                            <input
+                              value={institutionalContent.territory}
+                              onChange={(event) =>
+                                updateInstitutionalField("territory", event.target.value)
+                              }
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Marco temporal
+                            </label>
+                            <input
+                              value={institutionalContent.foundedLabel}
+                              onChange={(event) =>
+                                updateInstitutionalField(
+                                  "foundedLabel",
+                                  event.target.value
+                                )
+                              }
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                          </div>
+                        </div>
+                      </SectionCard>
+
+                      <SectionCard
+                        title="Programas do projeto"
+                        description="Cada linha pode seguir o formato Titulo: descricao."
+                      >
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Frentes em andamento
+                            </label>
+                            <textarea
+                              value={institutionalContent.activeProjects.join("\n")}
+                              onChange={(event) =>
+                                updateInstitutionalField(
+                                  "activeProjects",
+                                  event.target.value
+                                    .split("\n")
+                                    .map((item) => item.trim())
+                                    .filter(Boolean)
+                                )
+                              }
+                              rows={8}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>
+                              Uma linha por frente ativa exibida na home, Quem somos e Faca parte.
+                            </FieldHelp>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Frentes planejadas
+                            </label>
+                            <textarea
+                              value={institutionalContent.plannedProjects.join("\n")}
+                              onChange={(event) =>
+                                updateInstitutionalField(
+                                  "plannedProjects",
+                                  event.target.value
+                                    .split("\n")
+                                    .map((item) => item.trim())
+                                    .filter(Boolean)
+                                )
+                              }
+                              rows={8}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>
+                              Projetos futuros que aparecem como expansao planejada.
+                            </FieldHelp>
+                          </div>
+                        </div>
+                      </SectionCard>
+                    </>
                   )}
 
                   {activeTab === "oQueEstamosFazendo" && (
@@ -934,165 +1134,246 @@ export default function ConfiguracoesPage() {
                   )}
 
                   {activeTab === "facaParte" && (
-                    <SectionCard
-                      title="Faça parte"
-                      description="Defina chamadas direcionadas a voluntários e parceiros."
-                    >
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-zinc-700">
-                            Texto do botão principal
-                          </label>
-                          <input
-                            name="hero_button_primary_text"
-                            value={config.hero_button_primary_text}
-                            onChange={handleChange}
-                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                          />
-                          <FieldHelp>Verbo que chama para agir.</FieldHelp>
+                    <>
+                      <SectionCard
+                        title="Chamadas para conversao"
+                        description="A pagina Faca parte usa estes botoes para direcionar voluntarios e parceiros."
+                      >
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Texto do botao principal
+                            </label>
+                            <input
+                              name="hero_button_primary_text"
+                              value={config.hero_button_primary_text}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>Verbo que chama para agir.</FieldHelp>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Link do botao principal
+                            </label>
+                            <input
+                              name="hero_button_primary_link"
+                              value={config.hero_button_primary_link}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>
+                              Pode ser uma rota interna como /seja-voluntario.
+                            </FieldHelp>
+                          </div>
                         </div>
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-zinc-700">
-                            Link do botão principal
-                          </label>
-                          <input
-                            name="hero_button_primary_link"
-                            value={config.hero_button_primary_link}
-                            onChange={handleChange}
-                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                          />
-                          <FieldHelp>
-                            Pode ser uma rota interna como /seja-voluntario.
-                          </FieldHelp>
-                        </div>
-                      </div>
 
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-zinc-700">
-                            Texto do botão secundário
-                          </label>
-                          <input
-                            name="hero_button_secondary_text"
-                            value={config.hero_button_secondary_text}
-                            onChange={handleChange}
-                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                          />
-                          <FieldHelp>Complementa o convite principal.</FieldHelp>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Texto do botao secundario
+                            </label>
+                            <input
+                              name="hero_button_secondary_text"
+                              value={config.hero_button_secondary_text}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>Complementa o convite principal.</FieldHelp>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Link do botao secundario
+                            </label>
+                            <input
+                              name="hero_button_secondary_link"
+                              value={config.hero_button_secondary_link}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>
+                              Ideal para detalhar programas ou impacto.
+                            </FieldHelp>
+                          </div>
                         </div>
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-zinc-700">
-                            Link do botão secundário
-                          </label>
-                          <input
-                            name="hero_button_secondary_link"
-                            value={config.hero_button_secondary_link}
-                            onChange={handleChange}
-                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                          />
-                          <FieldHelp>
-                            Ideal para detalhar programas ou impacto.
-                          </FieldHelp>
+                      </SectionCard>
+
+                      <SectionCard
+                        title="Conteudo compartilhado"
+                        description="As demais informacoes desta pagina sao alimentadas pelas abas Quem somos e Contato."
+                      >
+                        <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-600">
+                          A pagina Faca parte reutiliza as frentes em andamento,
+                          recursos do projeto, endereco institucional e dados de
+                          contato ja preenchidos nas outras abas para manter a
+                          experiencia consistente e sempre atualizada.
                         </div>
-                      </div>
-                    </SectionCard>
+                      </SectionCard>
+                    </>
                   )}
 
                   {activeTab === "contato" && (
-                    <SectionCard
-                      title="Contato e canais"
-                      description="Atualize e-mail, telefone e WhatsApp com validação."
-                    >
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-zinc-700">
-                            E-mail
-                          </label>
-                          <input
-                            type="email"
-                            name="contact_email"
-                            value={config.contact_email}
-                            onChange={handleChange}
-                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                            pattern="^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
-                            title="Informe um e-mail válido."
-                          />
-                          <FieldHelp>
-                            Canal direto exibido no rodapé e formulários.
-                          </FieldHelp>
+                    <>
+                      <SectionCard
+                        title="Contato e canais"
+                        description="Atualize e-mail, telefone, WhatsApp e redes com validacao."
+                      >
+                        <div className="grid gap-4 md:grid-cols-3">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              E-mail
+                            </label>
+                            <input
+                              type="email"
+                              name="contact_email"
+                              value={config.contact_email}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                              pattern="^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+                              title="Informe um e-mail valido."
+                            />
+                            <FieldHelp>
+                              Canal direto exibido no rodape e nas chamadas de contato.
+                            </FieldHelp>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Telefone
+                            </label>
+                            <input
+                              type="tel"
+                              name="contact_phone"
+                              value={config.contact_phone}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                              pattern="^\\(\\d{2}\\)\\s9\\s\\d{4}-\\d{4}$"
+                              title="Formato esperado: (41) 9 9999-9999"
+                            />
+                            <FieldHelp>
+                              Clique direciona para conversa com a equipe.
+                            </FieldHelp>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              WhatsApp
+                            </label>
+                            <input
+                              type="tel"
+                              name="contact_whatsapp"
+                              value={config.contact_whatsapp}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                              pattern="^\\(\\d{2}\\)\\s9\\s\\d{4}-\\d{4}$"
+                              title="Formato esperado: (41) 9 9999-9999"
+                            />
+                            <FieldHelp>
+                              Clique abre o WhatsApp com o numero informado.
+                            </FieldHelp>
+                          </div>
                         </div>
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-zinc-700">
-                            Telefone
-                          </label>
-                          <input
-                            type="tel"
-                            name="contact_phone"
-                            value={config.contact_phone}
-                            onChange={handleChange}
-                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                            pattern="^\\(\\d{2}\\)\\s9\\s\\d{4}-\\d{4}$"
-                            title="Formato esperado: (41) 9 9999-9999"
-                          />
-                          <FieldHelp>
-                            Clique direciona para conversa no WhatsApp.
-                          </FieldHelp>
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-zinc-700">
-                            WhatsApp
-                          </label>
-                          <input
-                            type="tel"
-                            name="contact_whatsapp"
-                            value={config.contact_whatsapp}
-                            onChange={handleChange}
-                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                            pattern="^\\(\\d{2}\\)\\s9\\s\\d{4}-\\d{4}$"
-                            title="Formato esperado: (41) 9 9999-9999"
-                          />
-                          <FieldHelp>
-                            Clique abre https://wa.me/+55 com o número informado.
-                          </FieldHelp>
-                        </div>
-                      </div>
 
-                      <div className="mt-3 grid gap-4 md:grid-cols-3">
+                        <div className="mt-3 grid gap-4 md:grid-cols-3">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Instagram
+                            </label>
+                            <input
+                              name="instagram_url"
+                              value={config.instagram_url}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Facebook
+                            </label>
+                            <input
+                              name="facebook_url"
+                              value={config.facebook_url}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Youtube
+                            </label>
+                            <input
+                              name="youtube_url"
+                              value={config.youtube_url}
+                              onChange={handleChange}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                          </div>
+                        </div>
+                      </SectionCard>
+
+                      <SectionCard
+                        title="Equipe, recursos e endereco"
+                        description="Essas informacoes abastecem a pagina Contato e o rodape publico."
+                      >
                         <div>
                           <label className="mb-1 block text-sm font-medium text-zinc-700">
-                            Instagram
+                            Endereco institucional
                           </label>
                           <input
-                            name="instagram_url"
-                            value={config.instagram_url}
-                            onChange={handleChange}
+                            value={institutionalContent.address}
+                            onChange={(event) =>
+                              updateInstitutionalField("address", event.target.value)
+                            }
                             className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
                           />
                         </div>
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-zinc-700">
-                            Facebook
-                          </label>
-                          <input
-                            name="facebook_url"
-                            value={config.facebook_url}
-                            onChange={handleChange}
-                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                          />
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Direcao e equipe
+                            </label>
+                            <textarea
+                              value={institutionalContent.boardMembers.join("\n")}
+                              onChange={(event) =>
+                                updateInstitutionalField(
+                                  "boardMembers",
+                                  event.target.value
+                                    .split("\n")
+                                    .map((item) => item.trim())
+                                    .filter(Boolean)
+                                )
+                              }
+                              rows={8}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>
+                              Uma linha por cargo, de preferencia no formato Cargo: Nome.
+                            </FieldHelp>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700">
+                              Recursos e infraestrutura
+                            </label>
+                            <textarea
+                              value={institutionalContent.resourceHighlights.join("\n")}
+                              onChange={(event) =>
+                                updateInstitutionalField(
+                                  "resourceHighlights",
+                                  event.target.value
+                                    .split("\n")
+                                    .map((item) => item.trim())
+                                    .filter(Boolean)
+                                )
+                              }
+                              rows={8}
+                              className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
+                            />
+                            <FieldHelp>
+                              Uma linha por destaque de estrutura, materiais ou manutencao.
+                            </FieldHelp>
+                          </div>
                         </div>
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-zinc-700">
-                            Youtube
-                          </label>
-                          <input
-                            name="youtube_url"
-                            value={config.youtube_url}
-                            onChange={handleChange}
-                            className="w-full rounded-2xl border border-zinc-300 px-4 py-3"
-                          />
-                        </div>
-                      </div>
-                    </SectionCard>
+                      </SectionCard>
+                    </>
                   )}
                 </div>
 

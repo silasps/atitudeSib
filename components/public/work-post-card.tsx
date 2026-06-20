@@ -238,7 +238,7 @@ function formatPostDate(value: string) {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "data nao informada";
+    return "data não informada";
   }
 
   return new Intl.DateTimeFormat("pt-BR", {

@@ -1,15 +1,48 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { TurmaScheduleEditor } from "@/components/admin/turma-schedule-editor";
 import {
   createMatriculaAction,
   encerrarMatriculaAction,
   updateTurmaAction,
 } from "../actions";
+import {
+  type AdminDisplayUser,
+  getAdminUserAbbreviatedName,
+  getAdminUserDisplayName,
+  getAdminUserIdentifier,
+  isAssignableProfessorUser,
+  sortAdminUsersByName,
+} from "@/lib/admin-user-display";
+import { getTurmaScheduleSummary } from "@/lib/turma-schedule";
 
-function getUserLabel(user: any) {
-  return user?.full_name || user?.nome || user?.email || "Sem identificação";
-}
+type TurmaRecord = {
+  id: number;
+  nome: string;
+  descricao?: string | null;
+  status?: string | null;
+  professor_user_id?: string | null;
+  dias_horarios?: string | null;
+  horario_inicio?: string | null;
+  horario_fim?: string | null;
+};
+
+type MatriculaRecord = {
+  id: number;
+  aluno_id: number;
+  data_matricula?: string | null;
+  observacoes?: string | null;
+  status?: string | null;
+};
+
+type AlunoRecord = {
+  id: number;
+  nome?: string | null;
+  nome_responsavel?: string | null;
+  telefone_responsavel?: string | null;
+  status?: string | null;
+};
 
 function parseDate(value?: string | null) {
   if (!value) return null;
@@ -67,40 +100,41 @@ export default async function TurmaDetalhePage({
     notFound();
   }
 
-  const professores = (adminUsers ?? []).filter((user: any) => {
-    const active = user.is_active !== false;
-    const role = String(user.role ?? "");
-    return active && (role === "professor" || role === "admin");
-  });
+  const turmaData = turma as TurmaRecord;
 
-  const usersById = new Map<string, any>();
-  for (const user of adminUsers ?? []) {
+  const professores = sortAdminUsersByName(
+    ((adminUsers ?? []) as AdminDisplayUser[]).filter((user) =>
+      isAssignableProfessorUser(user)
+    )
+  );
+
+  const usersById = new Map<string, AdminDisplayUser>();
+  for (const user of (adminUsers ?? []) as AdminDisplayUser[]) {
     const key = String(user.user_id ?? user.id ?? "");
     if (key) usersById.set(key, user);
   }
 
-  const alunosById = new Map<string, any>();
-  for (const aluno of alunos ?? []) {
+  const alunosById = new Map<string, AlunoRecord>();
+  for (const aluno of (alunos ?? []) as AlunoRecord[]) {
     alunosById.set(String(aluno.id), aluno);
   }
 
-  const matriculasDaTurma = matriculas ?? [];
+  const matriculasDaTurma = (matriculas ?? []) as MatriculaRecord[];
   const alunoIdsJaVinculados = new Set(
-    matriculasDaTurma.map((item: any) => String(item.aluno_id))
+    matriculasDaTurma.map((item) => String(item.aluno_id))
   );
 
-  const alunosDisponiveis = (alunos ?? []).filter((aluno: any) => {
+  const alunosDisponiveis = ((alunos ?? []) as AlunoRecord[]).filter((aluno) => {
     const ativo = aluno.status !== "inativo";
     return ativo && !alunoIdsJaVinculados.has(String(aluno.id));
   });
 
-  const matriculasAtivas = matriculasDaTurma.filter(
-    (item: any) => item.status === "ativa"
-  );
+  const matriculasAtivas = matriculasDaTurma.filter((item) => item.status === "ativa");
 
-  const professorAtual = turma.professor_user_id
-    ? usersById.get(String(turma.professor_user_id))
+  const professorAtual = turmaData.professor_user_id
+    ? usersById.get(String(turmaData.professor_user_id))
     : null;
+  const turmaScheduleSummary = getTurmaScheduleSummary(turmaData.dias_horarios);
 
   return (
     <div className="space-y-6">
@@ -112,22 +146,22 @@ export default async function TurmaDetalhePage({
           >
             ← Voltar para turmas
           </Link>
-          <h1 className="mt-2 text-2xl font-bold text-zinc-900">{turma.nome}</h1>
+          <h1 className="mt-2 text-2xl font-bold text-zinc-900">{turmaData.nome}</h1>
           <p className="mt-1 text-sm text-zinc-600">
-            {turma.dias_horarios || "Dias e horários não informados"}
+            {turmaScheduleSummary || "Dias e horarios nao informados"}
           </p>
         </div>
 
         <span
           className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
-            turma.status === "ativa"
+            turmaData.status === "ativa"
               ? "bg-emerald-100 text-emerald-700"
-              : turma.status === "encerrada"
+              : turmaData.status === "encerrada"
               ? "bg-zinc-200 text-zinc-700"
               : "bg-amber-100 text-amber-700"
           }`}
         >
-          {turma.status}
+          {turmaData.status}
         </span>
       </div>
 
@@ -136,7 +170,7 @@ export default async function TurmaDetalhePage({
           action={updateTurmaAction}
           className="space-y-5 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm md:p-6"
         >
-          <input type="hidden" name="id" value={String(turma.id)} />
+          <input type="hidden" name="id" value={String(turmaData.id)} />
 
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Dados da turma</h2>
@@ -153,7 +187,7 @@ export default async function TurmaDetalhePage({
               id="nome"
               name="nome"
               required
-              defaultValue={turma.nome ?? ""}
+              defaultValue={turmaData.nome ?? ""}
               className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
             />
           </div>
@@ -169,7 +203,7 @@ export default async function TurmaDetalhePage({
               id="descricao"
               name="descricao"
               rows={4}
-              defaultValue={turma.descricao ?? ""}
+              defaultValue={turmaData.descricao ?? ""}
               className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
             />
           </div>
@@ -185,16 +219,16 @@ export default async function TurmaDetalhePage({
               <select
                 id="professor_user_id"
                 name="professor_user_id"
-                defaultValue={turma.professor_user_id ?? ""}
+                defaultValue={turmaData.professor_user_id ?? ""}
                 className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
               >
                 <option value="">Selecionar depois</option>
-                {professores.map((user: any) => (
+                {professores.map((user) => (
                   <option
-                    key={String(user.user_id ?? user.id ?? "")}
-                    value={String(user.user_id ?? user.id ?? "")}
+                    key={getAdminUserIdentifier(user)}
+                    value={getAdminUserIdentifier(user)}
                   >
-                    {getUserLabel(user)} ({user.role})
+                    {getAdminUserAbbreviatedName(user)} ({user.role})
                   </option>
                 ))}
               </select>
@@ -207,7 +241,7 @@ export default async function TurmaDetalhePage({
               <select
                 id="status"
                 name="status"
-                defaultValue={turma.status ?? "ativa"}
+                defaultValue={turmaData.status ?? "ativa"}
                 className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
               >
                 <option value="ativa">Ativa</option>
@@ -217,25 +251,16 @@ export default async function TurmaDetalhePage({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label
-              htmlFor="dias_horarios"
-              className="text-sm font-medium text-zinc-800"
-            >
-              Dias e horários
-            </label>
-            <input
-              id="dias_horarios"
-              name="dias_horarios"
-              defaultValue={turma.dias_horarios ?? ""}
-              className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-            />
-          </div>
+          <TurmaScheduleEditor
+            initialRawValue={turmaData.dias_horarios ?? null}
+            initialHorarioInicio={turmaData.horario_inicio ?? null}
+            initialHorarioFim={turmaData.horario_fim ?? null}
+          />
 
           <div className="rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-600">
             <p>
               <span className="font-medium text-zinc-900">Professor atual:</span>{" "}
-              {professorAtual ? getUserLabel(professorAtual) : "Não definido"}
+              {professorAtual ? getAdminUserDisplayName(professorAtual) : "Nao definido"}
             </p>
             <p className="mt-1">
               <span className="font-medium text-zinc-900">Matriculados ativos:</span>{" "}
@@ -257,7 +282,7 @@ export default async function TurmaDetalhePage({
           action={createMatriculaAction}
           className="space-y-5 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm md:p-6"
         >
-          <input type="hidden" name="turma_id" value={String(turma.id)} />
+          <input type="hidden" name="turma_id" value={String(turmaData.id)} />
 
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">
@@ -280,7 +305,7 @@ export default async function TurmaDetalhePage({
               className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
             >
               <option value="">Selecione um aluno</option>
-              {alunosDisponiveis.map((aluno: any) => (
+              {alunosDisponiveis.map((aluno) => (
                 <option key={aluno.id} value={String(aluno.id)}>
                   {aluno.nome} — {aluno.nome_responsavel}
                 </option>
@@ -330,7 +355,7 @@ export default async function TurmaDetalhePage({
 
         {matriculasDaTurma.length ? (
           <div className="mt-5 space-y-3">
-            {matriculasDaTurma.map((matricula: any) => {
+            {matriculasDaTurma.map((matricula) => {
               const aluno = alunosById.get(String(matricula.aluno_id));
 
               return (
@@ -382,7 +407,7 @@ export default async function TurmaDetalhePage({
                           <input
                             type="hidden"
                             name="turma_id"
-                            value={String(turma.id)}
+                            value={String(turmaData.id)}
                           />
                           <button
                             type="submit"

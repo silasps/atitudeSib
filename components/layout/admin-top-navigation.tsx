@@ -11,6 +11,7 @@ const navItems = [
   { title: "Funções", href: "/admin/funcoes-voluntariado" },
   { title: "Necessidades", href: "/admin/necessidades-voluntariado" },
   { title: "Candidaturas", href: "/admin/candidaturas-voluntariado" },
+  { title: "Participantes", href: "/admin/participantes" },
   { title: "Documentos", href: "/admin/documentos-voluntariado" },
   { title: "Turmas", href: "/admin/turmas" },
   { title: "Alunos", href: "/admin/alunos" },

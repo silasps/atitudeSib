@@ -1,50 +1,45 @@
+import {
+  Facebook,
+  Instagram,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Youtube,
+} from "lucide-react";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import {
+  buildPageMetadata,
+  getInstitutionalContent,
+  getPublicSiteConfig,
+  sanitizePhoneForWhatsApp,
+  splitLabelDescription,
+} from "@/lib/public-site";
 
-type SiteConfig = {
-  project_name: string;
-  project_subtitle: string;
-  contact_email: string;
-  contact_phone: string;
-  contact_whatsapp: string;
-};
+export async function generateMetadata() {
+  const config = await getPublicSiteConfig();
+  const institutionalContent = getInstitutionalContent(config);
 
-const defaultContact: SiteConfig = {
-  project_name: "O Atitude",
-  project_subtitle: "Projeto Escola Social",
-  contact_email: "contato@oatitude.org.br",
-  contact_phone: "(41) 9 99288-1025",
-  contact_whatsapp: "(41) 9 99288-1025",
-};
-
-function sanitizePhoneForWhatsApp(value?: string) {
-  if (!value) return null;
-  const digits = value.replace(/\D/g, "");
-  if (!digits) return null;
-  const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
-  return `https://wa.me/+${withCountry}`;
+  return buildPageMetadata(config, {
+    title: "Contato",
+    path: "/contato",
+    description:
+      institutionalContent.address ||
+      "Entre em contato com o Atitude para conversar sobre voluntariado, parcerias e apoio institucional.",
+    keywords: [
+      "contato",
+      "parceria institucional",
+      "voluntariado",
+      "Almirante Tamandaré",
+      "projeto atitude",
+    ],
+  });
 }
 
 export default async function ContatoPage() {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("site_config")
-    .select(
-      "project_name,project_subtitle,contact_email,contact_phone,contact_whatsapp"
-    )
-    .limit(1)
-    .maybeSingle();
-
-  const config = data
-    ? {
-        project_name: data.project_name ?? defaultContact.project_name,
-        project_subtitle: data.project_subtitle ?? defaultContact.project_subtitle,
-        contact_email: data.contact_email ?? defaultContact.contact_email,
-        contact_phone: data.contact_phone ?? defaultContact.contact_phone,
-        contact_whatsapp: data.contact_whatsapp ?? defaultContact.contact_whatsapp,
-      }
-    : defaultContact;
+  const config = await getPublicSiteConfig();
+  const institutionalContent = getInstitutionalContent(config);
 
   const whatsappLink =
     sanitizePhoneForWhatsApp(config.contact_whatsapp) ??
@@ -54,97 +49,197 @@ export default async function ContatoPage() {
     ? `mailto:${config.contact_email}`
     : undefined;
 
+  const socialCards = [
+    {
+      href: config.instagram_url,
+      label: "Instagram",
+      icon: Instagram,
+    },
+    {
+      href: config.facebook_url,
+      label: "Facebook",
+      icon: Facebook,
+    },
+    {
+      href: config.youtube_url,
+      label: "YouTube",
+      icon: Youtube,
+    },
+  ].filter((item) => item.href);
+
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] text-zinc-950">
       <PublicHeader
         projectName={config.project_name}
         projectSubtitle={config.project_subtitle}
       />
 
-      <main className="space-y-10 px-6 py-12 md:px-10">
-        <section className="mx-auto max-w-5xl space-y-6 rounded-3xl border border-zinc-200 bg-gradient-to-br from-emerald-600 to-cyan-500 p-8 text-white shadow-xl">
-          <p className="text-xs uppercase tracking-[0.4em] text-white/80">
-            Contato direto
-          </p>
-          <h1 className="text-3xl font-bold">Converse com O Atitude</h1>
-          <p className="text-sm text-white/90">
-            Estamos em Almirante Tamandaré, no bairro Lamenha Grande. Para falar com a
-            equipe administrativa ou acertar uma parceria, use o canal de sua preferência.
-          </p>
-          <div className="space-y-2 text-sm">
-            {emailHref ? (
-              <a
-                href={emailHref}
-                className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-white transition hover:bg-white/35"
-              >
-                E-mail: {config.contact_email}
-              </a>
-            ) : (
-              <p>E-mail: {config.contact_email}</p>
-            )}
-            {whatsappLink ? (
-              <a
-                href={whatsappLink}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-white transition hover:bg-white/35"
-              >
-                WhatsApp: {config.contact_whatsapp || config.contact_phone}
-              </a>
-            ) : (
-              <p>WhatsApp: {config.contact_whatsapp || config.contact_phone}</p>
-            )}
+      <main className="space-y-12 px-6 py-12 md:px-10 md:py-16">
+        <section className="mx-auto max-w-6xl rounded-[2.5rem] border border-zinc-200 bg-white p-8 shadow-sm lg:p-10">
+          <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+            <div>
+              <p className="text-xs uppercase tracking-[0.45em] text-zinc-500">
+                Contato direto
+              </p>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-zinc-950 md:text-5xl">
+                Converse com a equipe e aproxime-se das frentes do projeto
+              </h1>
+              <p className="mt-5 max-w-3xl text-base leading-8 text-zinc-600">
+                Use o canal mais confortável para você. A página pública agora
+                concentra informações institucionais, canais reais e caminhos para
+                parceria, voluntariado e apoio ao território.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {emailHref ? (
+                  <a
+                    href={emailHref}
+                    className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-5 py-3 text-sm font-semibold text-white"
+                  >
+                    <Mail size={16} />
+                    {config.contact_email}
+                  </a>
+                ) : null}
+                {whatsappLink ? (
+                  <a
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-900"
+                  >
+                    <MessageCircle size={16} />
+                    {config.contact_whatsapp || config.contact_phone}
+                  </a>
+                ) : null}
+              </div>
+            </div>
+
+            <article className="rounded-[2rem] bg-zinc-950 p-6 text-white shadow-sm">
+              <div className="flex items-center gap-3">
+                <MapPin size={18} />
+                <p className="text-xs uppercase tracking-[0.35em] text-white/65">
+                  Base territorial
+                </p>
+              </div>
+              <p className="mt-4 text-base leading-8 text-white/82">
+                {institutionalContent.address}
+              </p>
+              {contactPhoneLink ? (
+                <a
+                  href={contactPhoneLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  <Phone size={16} />
+                  Iniciar conversa
+                </a>
+              ) : null}
+            </article>
           </div>
         </section>
 
-        <section className="mx-auto max-w-4xl space-y-4 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-semibold text-zinc-900">Equipe e rotina</h2>
-          <p className="text-sm text-zinc-700">
-            Nossa equipe reúne educadores sociais, apoio administrativo e apoio operacional
-            dedicados à transformação de crianças, adolescentes e idosos em situação de
-            vulnerabilidade social.
-          </p>
-          <ul className="space-y-1 text-sm text-zinc-700">
-            <li>Diretor Presidente: Raimundo Alberto Gonçalves da Silva</li>
-            <li>Primeira Secretária: Edilsem Cristina Mengarda Figueirôa</li>
-            <li>Segunda Secretária: Jessica Domingues</li>
-            <li>Primeiro Tesoureiro: Welliton da Silva Santo</li>
-            <li>Segunda Tesoureira: Cristiane Ribeiro Martins</li>
-            <li>
-              Conselho Fiscal: Maria da Penha Silva dos Santos · Reinaldo Vicente
-              Traczynski
-            </li>
-          </ul>
-        </section>
-
-        <section className="mx-auto max-w-4xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h3 className="text-xl font-semibold text-zinc-900">Recursos e infraestrutura</h3>
-          <ul className="mt-3 space-y-2 text-sm text-zinc-700">
-            <li>Recursos para higiene e limpeza distribuídos mensalmente.</li>
-            <li>Material didático, equipamentos esportivos e musicais sempre em estoque.</li>
-            <li>Materiais específicos (kimonos, violões, halteres, tatames) comprados sob demanda.</li>
-            <li>Recursos para alimentação garantidos semanalmente.</li>
-          </ul>
-        </section>
-
-        <section className="mx-auto max-w-4xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h3 className="text-xl font-semibold text-zinc-900">Localização</h3>
-          <p className="text-sm text-zinc-700">
-            Rua Vereador Wadislau Bugalski, 3827 · Lamenha Grande · Almirante Tamandaré - PR
-          </p>
-          {contactPhoneLink && (
-            <p className="text-sm text-zinc-700">
-              Clique para iniciar conversa no WhatsApp:{' '}
-              <a
-                href={contactPhoneLink}
-                target="_blank"
-                rel="noreferrer"
-                className="font-medium text-emerald-600"
-              >
-                {config.contact_phone}
-              </a>
+        <section className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
+          <article className="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <Mail size={18} className="text-zinc-500" />
+              <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
+                E-mail
+              </p>
+            </div>
+            <p className="mt-4 text-lg font-semibold text-zinc-950">
+              {config.contact_email || "Não informado"}
             </p>
-          )}
+          </article>
+          <article className="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <Phone size={18} className="text-zinc-500" />
+              <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
+                Telefone
+              </p>
+            </div>
+            <p className="mt-4 text-lg font-semibold text-zinc-950">
+              {config.contact_phone || "Não informado"}
+            </p>
+          </article>
+          <article className="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <MessageCircle size={18} className="text-zinc-500" />
+              <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
+                WhatsApp
+              </p>
+            </div>
+            <p className="mt-4 text-lg font-semibold text-zinc-950">
+              {config.contact_whatsapp || "Não informado"}
+            </p>
+          </article>
+        </section>
+
+        {socialCards.length > 0 ? (
+          <section className="mx-auto max-w-6xl rounded-[2rem] border border-zinc-200 bg-[linear-gradient(135deg,#ecfeff_0%,#ffffff_55%,#fefce8_100%)] p-8 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">
+              Redes e presença digital
+            </p>
+            <div className="mt-6 flex flex-wrap gap-4">
+              {socialCards.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href ?? "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-3 rounded-full border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 shadow-sm"
+                  >
+                    <Icon size={18} />
+                    {item.label}
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
+        <section className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <article className="rounded-[2rem] border border-zinc-200 bg-white p-8 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">
+              Equipe e diretoria
+            </p>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {institutionalContent.boardMembers.map((item) => {
+                const { label, description } = splitLabelDescription(item);
+
+                return (
+                  <div
+                    key={item}
+                    className="rounded-[1.75rem] border border-zinc-200 bg-zinc-50 p-5"
+                  >
+                    <p className="text-xs uppercase tracking-[0.25em] text-zinc-500">
+                      {label}
+                    </p>
+                    <p className="mt-3 text-sm font-semibold text-zinc-950">
+                      {description}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+
+          <article className="rounded-[2rem] border border-zinc-200 bg-white p-8 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">
+              Recursos e infraestrutura
+            </p>
+            <div className="mt-6 space-y-4">
+              {institutionalContent.resourceHighlights.map((item) => (
+                <div
+                  key={item}
+                  className="rounded-[1.75rem] border border-zinc-200 bg-zinc-50 p-5"
+                >
+                  <p className="text-sm leading-7 text-zinc-600">{item}</p>
+                </div>
+              ))}
+            </div>
+          </article>
         </section>
       </main>
 
@@ -154,6 +249,10 @@ export default async function ContatoPage() {
         contactEmail={config.contact_email}
         contactPhone={config.contact_phone}
         contactWhatsapp={config.contact_whatsapp}
+        instagramUrl={config.instagram_url}
+        facebookUrl={config.facebook_url}
+        youtubeUrl={config.youtube_url}
+        addressLine={institutionalContent.address}
       />
     </div>
   );

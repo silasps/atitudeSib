@@ -5,6 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { PencilLine } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import {
+  formatTurmaDurationLabel,
+  getTurmaDurationForDate,
+  getTurmaScheduleSummary,
+} from "@/lib/turma-schedule";
 
 type RegistroPresenca = {
   matriculaId: number;
@@ -25,6 +30,7 @@ type EncontroHistorico = {
 type TurmaHistorico = {
   id: number;
   nome: string;
+  dias_horarios?: string | null;
   horario_inicio?: string | null;
   horario_fim?: string | null;
   duracao_horas?: number | null;
@@ -122,7 +128,19 @@ export default function HistoricoPresencasPage() {
     });
   }, [encontros, searchTerm, startDate, endDate]);
 
-  const totalHoras = filteredEncontros.length * Number(turma?.duracao_horas || 0);
+  const turmaScheduleSummary = getTurmaScheduleSummary(turma?.dias_horarios);
+  const totalHoras = filteredEncontros.reduce((total, encontro) => {
+    return (
+      total +
+      Number(
+        getTurmaDurationForDate(
+          turma?.dias_horarios,
+          encontro.data_encontro,
+          turma?.duracao_horas
+        ) || 0
+      )
+    );
+  }, 0);
 
   if (loading) {
     return (
@@ -151,8 +169,11 @@ export default function HistoricoPresencasPage() {
           </h1>
           <p className="mt-1 text-sm text-zinc-600">
             {turma.nome} · Total de encontros: {encontros.length} · Horas totais:{" "}
-            {totalHoras}h
+            {formatTurmaDurationLabel(totalHoras)}h
           </p>
+          {turmaScheduleSummary ? (
+            <p className="mt-1 text-sm text-zinc-500">{turmaScheduleSummary}</p>
+          ) : null}
           {contaConectada ? (
             <p className="mt-2 text-xs text-zinc-500">
               Conta conectada: {contaConectada}

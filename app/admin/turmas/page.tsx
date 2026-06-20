@@ -1,9 +1,21 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getTurmaScheduleSummary } from "@/lib/turma-schedule";
+import { type AdminDisplayUser, getAdminUserDisplayName } from "@/lib/admin-user-display";
 
-function getUserLabel(user: any) {
-  return user?.full_name || user?.nome || user?.email || "Sem identificação";
-}
+type TurmaCard = {
+  id: number;
+  nome: string;
+  descricao?: string | null;
+  dias_horarios?: string | null;
+  professor_user_id?: string | null;
+  status?: string | null;
+};
+
+type MatriculaAtiva = {
+  id: number;
+  turma_id: number;
+};
 
 export default async function AdminTurmasPage() {
   const supabase = await createSupabaseServerClient();
@@ -15,14 +27,14 @@ export default async function AdminTurmasPage() {
       supabase.from("matriculas").select("id, turma_id").eq("status", "ativa"),
     ]);
 
-  const usersById = new Map<string, any>();
-  for (const user of adminUsers ?? []) {
+  const usersById = new Map<string, AdminDisplayUser>();
+  for (const user of (adminUsers ?? []) as AdminDisplayUser[]) {
     const key = String(user.user_id ?? user.id ?? "");
     if (key) usersById.set(key, user);
   }
 
   const countByTurmaId = new Map<string, number>();
-  for (const matricula of matriculasAtivas ?? []) {
+  for (const matricula of (matriculasAtivas ?? []) as MatriculaAtiva[]) {
     const turmaId = String(matricula.turma_id);
     countByTurmaId.set(turmaId, (countByTurmaId.get(turmaId) ?? 0) + 1);
   }
@@ -48,12 +60,13 @@ export default async function AdminTurmasPage() {
 
       {turmas?.length ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 flex-1 p-4 md:p-4 md: p-6">
-          {turmas.map((turma: any) => {
+          {(turmas as TurmaCard[]).map((turma) => {
             const professor = turma.professor_user_id
               ? usersById.get(String(turma.professor_user_id))
               : null;
 
             const matriculados = countByTurmaId.get(String(turma.id)) ?? 0;
+            const turmaScheduleSummary = getTurmaScheduleSummary(turma.dias_horarios);
 
             return (
               <Link
@@ -67,7 +80,7 @@ export default async function AdminTurmasPage() {
                       {turma.nome}
                     </h2>
                     <p className="mt-1 text-sm text-zinc-500">
-                      {turma.dias_horarios || "Dias e horários não informados"}
+                      {turmaScheduleSummary || "Dias e horarios nao informados"}
                     </p>
                   </div>
 
@@ -87,7 +100,7 @@ export default async function AdminTurmasPage() {
                 <div className="mt-4 space-y-2 text-sm text-zinc-600">
                   <p>
                     <span className="font-medium text-zinc-900">Professor:</span>{" "}
-                    {professor ? getUserLabel(professor) : "Não definido"}
+                    {professor ? getAdminUserDisplayName(professor) : "Não definido"}
                   </p>
                   <p>
                     <span className="font-medium text-zinc-900">Matriculados:</span>{" "}

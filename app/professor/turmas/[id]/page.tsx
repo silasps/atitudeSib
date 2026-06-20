@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getProfessorServerContext, getProfessorTurma } from "@/lib/professor-server";
+import { getTurmaScheduleSummary } from "@/lib/turma-schedule";
 
 type TurmaRecord = {
   id: number;
@@ -91,6 +92,8 @@ export default async function ProfessorTurmaDetalhePage({
     notFound();
   }
 
+  const turmaScheduleSummary = getTurmaScheduleSummary(turma.dias_horarios);
+
   const { data: matriculas, error: matriculasError } = await dataSupabase
     .from("matriculas")
     .select("*")
@@ -133,7 +136,7 @@ export default async function ProfessorTurmaDetalhePage({
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-zinc-900">{turma.nome}</h1>
         <p className="mt-1 text-sm text-zinc-600">
-          {turma.dias_horarios || "Dias e horários não informados"}
+          {turmaScheduleSummary || "Dias e horarios nao informados"}
         </p>
       </div>
 
@@ -151,7 +154,7 @@ export default async function ProfessorTurmaDetalhePage({
               </p>
               <p>
                 <span className="font-medium text-zinc-900">Dias e horários:</span>{" "}
-                {turma.dias_horarios || "Não informado"}
+                {turmaScheduleSummary || "Nao informado"}
               </p>
               <p>
                 <span className="font-medium text-zinc-900">Descrição:</span>{" "}

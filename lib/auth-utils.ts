@@ -132,15 +132,6 @@ export async function getLoginDestination(
     return "/acesso-negado";
   }
 
-  const metadataRole = getRoleFromMetadata(user);
-  if (isAdminRole(metadataRole)) {
-    return "/admin";
-  }
-
-  if (isProfessorOrAdminRole(metadataRole)) {
-    return "/professor/turmas";
-  }
-
   try {
     const { data, error } = await browserSupabase
       .from("admin_users")
@@ -164,6 +155,15 @@ export async function getLoginDestination(
     }
   } catch (error) {
     console.error("auth-utils/getLoginDestination/admin_users", error);
+  }
+
+  const metadataRole = getRoleFromMetadata(user);
+  if (isAdminRole(metadataRole)) {
+    return "/admin";
+  }
+
+  if (isProfessorOrAdminRole(metadataRole)) {
+    return "/professor/turmas";
   }
 
   try {

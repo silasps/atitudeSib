@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronDown, ChevronUp, PencilLine } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatDate } from "@/lib/utils";
+import { getTurmaScheduleSummary } from "@/lib/turma-schedule";
 
 type EncontroResumo = {
   id: number;
@@ -156,6 +157,9 @@ export default function ProfessorPresencasPage() {
         ) : (
           filteredTurmas.map((turma) => {
             const isExpanded = expandedTurmaId === turma.id;
+            const turmaScheduleSummary = getTurmaScheduleSummary(
+              turma.dias_horarios
+            );
 
             return (
               <div
@@ -190,7 +194,7 @@ export default function ProfessorPresencasPage() {
                         </span>
                       </div>
                       <p className="mt-2 text-sm text-zinc-600">
-                        {turma.dias_horarios || "Dias e horários não informados"}
+                        {turmaScheduleSummary || "Dias e horarios nao informados"}
                       </p>
                       <p className="mt-1 text-sm text-zinc-500">
                         Último encontro:{" "}

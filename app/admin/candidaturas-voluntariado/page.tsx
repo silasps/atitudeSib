@@ -141,12 +141,21 @@ export default function CandidaturasVoluntariadoPage() {
                 subtitle="Acompanhe os candidatos que entraram no fluxo público"
               />
 
-              <Link
-                href="/admin/documentos-voluntariado"
-                className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-900"
-              >
-                Ver documentos assinados
-              </Link>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/admin/participantes"
+                  className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-900"
+                >
+                  Ver participantes do projeto
+                </Link>
+
+                <Link
+                  href="/admin/documentos-voluntariado"
+                  className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-900"
+                >
+                  Ver documentos assinados
+                </Link>
+              </div>
             </div>
 
             <div className="mt-5 flex flex-wrap gap-2">

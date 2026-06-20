@@ -3,6 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import {
+  buildTurmaScheduleFields,
+  parseTurmaSchedulePayload,
+} from "@/lib/turma-schedule";
+
+const TURMA_OPTIONAL_COLUMNS = new Set([
+  "descricao",
+  "professor_user_id",
+  "status",
+  "dias_horarios",
+  "horario_inicio",
+  "horario_fim",
+  "duracao_horas",
+]);
 
 function textValue(value: FormDataEntryValue | null) {
   const parsed = String(value ?? "").trim();
@@ -14,36 +28,128 @@ function numberValue(value: FormDataEntryValue | null) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function scheduleTouched(formData: FormData) {
+  return String(formData.get("schedule_touched") ?? "0").trim() === "1";
+}
+
+function getMissingTurmasColumn(error: { message?: string | null } | null) {
+  const match = String(error?.message ?? "").match(
+    /Could not find the '([^']+)' column of '([^']+)' in the schema cache/i
+  );
+
+  if (!match || match[2] !== "turmas") {
+    return null;
+  }
+
+  return match[1];
+}
+
+function canDropTurmaColumn(payload: Record<string, unknown>, column: string) {
+  return (
+    TURMA_OPTIONAL_COLUMNS.has(column) &&
+    Object.prototype.hasOwnProperty.call(payload, column)
+  );
+}
+
+function omitTurmaColumn(payload: Record<string, unknown>, column: string) {
+  const nextPayload = { ...payload };
+  delete nextPayload[column];
+  return nextPayload;
+}
+
+async function insertTurmaWithSchemaFallback(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  payload: Record<string, unknown>
+) {
+  let currentPayload = { ...payload };
+
+  while (true) {
+    const result = await supabase
+      .from("turmas")
+      .insert(currentPayload)
+      .select("id")
+      .single();
+
+    if (!result.error) {
+      return result;
+    }
+
+    const missingColumn = getMissingTurmasColumn(result.error);
+
+    if (!missingColumn || !canDropTurmaColumn(currentPayload, missingColumn)) {
+      return result;
+    }
+
+    currentPayload = omitTurmaColumn(currentPayload, missingColumn);
+  }
+}
+
+async function updateTurmaWithSchemaFallback(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  id: number,
+  payload: Record<string, unknown>
+) {
+  let currentPayload = { ...payload };
+
+  while (true) {
+    const result = await supabase
+      .from("turmas")
+      .update(currentPayload)
+      .eq("id", id);
+
+    if (!result.error) {
+      return result;
+    }
+
+    const missingColumn = getMissingTurmasColumn(result.error);
+
+    if (!missingColumn || !canDropTurmaColumn(currentPayload, missingColumn)) {
+      return result;
+    }
+
+    currentPayload = omitTurmaColumn(currentPayload, missingColumn);
+  }
+}
+
 export async function createTurmaAction(formData: FormData) {
   const supabase = await createSupabaseServerClient();
 
   const nome = String(formData.get("nome") ?? "").trim();
   const descricao = textValue(formData.get("descricao"));
   const professorUserId = textValue(formData.get("professor_user_id"));
-  const diasHorarios = textValue(formData.get("dias_horarios"));
-  const horarioInicio = textValue(formData.get("horario_inicio"));
-  const horarioFim = textValue(formData.get("horario_fim"));
-  const duracaoHoras = numberValue(formData.get("duracao_horas"));
+  const schedulePayload = textValue(formData.get("schedule_payload"));
+  const touchedSchedule = scheduleTouched(formData);
   const status = String(formData.get("status") ?? "ativa").trim();
 
   if (!nome) {
     throw new Error("Informe o nome da turma.");
   }
 
-  const { data, error } = await supabase
-    .from("turmas")
-    .insert({
-      nome,
-      descricao,
-      professor_user_id: professorUserId,
-      dias_horarios: diasHorarios,
-      horario_inicio: horarioInicio,
-      horario_fim: horarioFim,
-      duracao_horas: duracaoHoras,
-      status,
-    })
-    .select("id")
-    .single();
+  const parsedSessions =
+    touchedSchedule || schedulePayload
+      ? parseTurmaSchedulePayload(schedulePayload)
+      : [];
+  const scheduleFields = buildTurmaScheduleFields(parsedSessions);
+  const payload: Record<string, unknown> = {
+    nome,
+    descricao,
+    professor_user_id: professorUserId,
+    status,
+  };
+
+  if (scheduleFields.diasHorarios !== null) {
+    payload.dias_horarios = scheduleFields.diasHorarios;
+  }
+
+  if (scheduleFields.horarioInicio !== null) {
+    payload.horario_inicio = scheduleFields.horarioInicio;
+  }
+
+  if (scheduleFields.horarioFim !== null) {
+    payload.horario_fim = scheduleFields.horarioFim;
+  }
+
+  const { data, error } = await insertTurmaWithSchemaFallback(supabase, payload);
 
   if (error) {
     throw new Error(`Erro ao criar turma: ${error.message}`);
@@ -60,23 +166,32 @@ export async function updateTurmaAction(formData: FormData) {
   const nome = String(formData.get("nome") ?? "").trim();
   const descricao = textValue(formData.get("descricao"));
   const professorUserId = textValue(formData.get("professor_user_id"));
-  const diasHorarios = textValue(formData.get("dias_horarios"));
+  const schedulePayload = textValue(formData.get("schedule_payload"));
+  const touchedSchedule = scheduleTouched(formData);
   const status = String(formData.get("status") ?? "ativa").trim();
 
   if (!id || !nome) {
     throw new Error("Dados da turma inválidos.");
   }
 
-  const { error } = await supabase
-    .from("turmas")
-    .update({
-      nome,
-      descricao,
-      professor_user_id: professorUserId,
-      dias_horarios: diasHorarios,
-      status,
-    })
-    .eq("id", id);
+  const payload: Record<string, unknown> = {
+    nome,
+    descricao,
+    professor_user_id: professorUserId,
+    status,
+  };
+
+  if (touchedSchedule) {
+    const scheduleFields = buildTurmaScheduleFields(
+      parseTurmaSchedulePayload(schedulePayload)
+    );
+
+    payload.dias_horarios = scheduleFields.diasHorarios;
+    payload.horario_inicio = scheduleFields.horarioInicio;
+    payload.horario_fim = scheduleFields.horarioFim;
+  }
+
+  const { error } = await updateTurmaWithSchemaFallback(supabase, id, payload);
 
   if (error) {
     throw new Error(`Erro ao atualizar turma: ${error.message}`);

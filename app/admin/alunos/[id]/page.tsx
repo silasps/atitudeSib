@@ -1,7 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { parseAlunoCadastro } from "@/lib/aluno-cadastro";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { updateAlunoAction } from "../actions";
+
+type TurmaRecord = {
+  id: number | string | null;
+  nome: string | null;
+};
+
+type MatriculaRecord = {
+  id: number | string | null;
+  turma_id: number | string | null;
+  data_matricula: string | null;
+  observacoes: string | null;
+  status: string | null;
+};
 
 function parseDate(value?: string | null) {
   if (!value) return null;
@@ -74,8 +88,9 @@ export default async function AlunoDetalhePage({
     notFound();
   }
 
-  const turmasById = new Map<string, any>();
-  for (const turma of turmas ?? []) {
+  const cadastroComplementar = parseAlunoCadastro(aluno.observacoes);
+  const turmasById = new Map<string, TurmaRecord>();
+  for (const turma of (turmas ?? []) as TurmaRecord[]) {
     turmasById.set(String(turma.id), turma);
   }
 
@@ -106,7 +121,7 @@ export default async function AlunoDetalhePage({
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Dados do aluno</h2>
             <p className="mt-1 text-sm text-zinc-500">
-              Atualize o cadastro e informações do responsável.
+              Atualize os dados principais e o contato principal do cadastro.
             </p>
           </div>
 
@@ -162,7 +177,7 @@ export default async function AlunoDetalhePage({
                 htmlFor="nome_responsavel"
                 className="text-sm font-medium text-zinc-800"
               >
-                Nome do responsável
+                Contato principal
               </label>
               <input
                 id="nome_responsavel"
@@ -178,7 +193,7 @@ export default async function AlunoDetalhePage({
                 htmlFor="telefone_responsavel"
                 className="text-sm font-medium text-zinc-800"
               >
-                Telefone do responsável
+                Telefone do contato principal
               </label>
               <input
                 id="telefone_responsavel"
@@ -201,7 +216,7 @@ export default async function AlunoDetalhePage({
               id="observacoes"
               name="observacoes"
               rows={5}
-              defaultValue={aluno.observacoes ?? ""}
+              defaultValue={cadastroComplementar.observacoesLivres ?? ""}
               className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
             />
           </div>
@@ -216,60 +231,131 @@ export default async function AlunoDetalhePage({
           </div>
         </form>
 
-        <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
-          <h2 className="text-lg font-semibold text-zinc-900">
-            Histórico de matrículas
-          </h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            Veja em quais turmas o aluno já foi vinculado.
-          </p>
+        <div className="space-y-6">
+          {cadastroComplementar.cadastro ? (
+            <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
+              <h2 className="text-lg font-semibold text-zinc-900">
+                Resumo do cadastro complementar
+              </h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Dados capturados no fluxo completo de inscrição.
+              </p>
 
-          {matriculas?.length ? (
-            <div className="mt-5 space-y-3">
-              {matriculas.map((matricula: any) => {
-                const turma = turmasById.get(String(matricula.turma_id));
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-zinc-200 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                    Documento
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-zinc-900">
+                    {cadastroComplementar.cadastro.aluno.documentoTipo ===
+                    "certidao_nascimento"
+                      ? "Certidão de nascimento"
+                      : "RG"}
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    {cadastroComplementar.cadastro.aluno.documentoNumero}
+                  </p>
+                </div>
 
-                return (
-                  <div
-                    key={matricula.id}
-                    className="rounded-2xl border border-zinc-200 p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-zinc-900">
-                          {turma?.nome || "Turma não encontrada"}
-                        </p>
-                        <p className="mt-1 text-sm text-zinc-500">
-                          Matrícula em {formatDate(matricula.data_matricula)}
-                        </p>
-                        {matricula.observacoes ? (
-                          <p className="mt-1 text-sm text-zinc-500">
-                            Obs.: {matricula.observacoes}
-                          </p>
-                        ) : null}
-                      </div>
+                <div className="rounded-2xl border border-zinc-200 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                    Projeto
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-zinc-900">
+                    {cadastroComplementar.cadastro.projeto.modalidade}
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    Turma desejada: {cadastroComplementar.cadastro.projeto.turmaDesejada}
+                  </p>
+                </div>
 
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          matricula.status === "ativa"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : matricula.status === "encerrada"
-                            ? "bg-zinc-200 text-zinc-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {matricula.status}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+                <div className="rounded-2xl border border-zinc-200 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                    Saúde
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-zinc-900">
+                    {cadastroComplementar.cadastro.saude.podePraticarAtividadesFisicas
+                      ? "Liberado para atividades físicas"
+                      : "Atividades físicas exigem avaliação"}
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    {cadastroComplementar.cadastro.documentos.length} documento(s)
+                    anexado(s) no fluxo completo.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-zinc-200 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                    Responsável legal
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-zinc-900">
+                    {cadastroComplementar.cadastro.responsavelLegal?.nomeCompleto ||
+                      "Não se aplica"}
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    {cadastroComplementar.cadastro.responsavelLegal?.parentesco ||
+                      "Aluno maior de idade"}
+                  </p>
+                </div>
+              </div>
             </div>
-          ) : (
-            <p className="mt-5 text-sm text-zinc-500">
-              Esse aluno ainda não possui matrículas registradas.
+          ) : null}
+
+          <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
+            <h2 className="text-lg font-semibold text-zinc-900">
+              Histórico de matrículas
+            </h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              Veja em quais turmas o aluno já foi vinculado.
             </p>
-          )}
+
+            {matriculas?.length ? (
+              <div className="mt-5 space-y-3">
+                {(matriculas as MatriculaRecord[]).map((matricula) => {
+                  const turma = turmasById.get(String(matricula.turma_id));
+
+                  return (
+                    <div
+                      key={matricula.id}
+                      className="rounded-2xl border border-zinc-200 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-zinc-900">
+                            {turma?.nome || "Turma não encontrada"}
+                          </p>
+                          <p className="mt-1 text-sm text-zinc-500">
+                            Matrícula em {formatDate(matricula.data_matricula)}
+                          </p>
+                          {matricula.observacoes ? (
+                            <p className="mt-1 text-sm text-zinc-500">
+                              Obs.: {matricula.observacoes}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            matricula.status === "ativa"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : matricula.status === "encerrada"
+                              ? "bg-zinc-200 text-zinc-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {matricula.status}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="mt-5 text-sm text-zinc-500">
+                Esse aluno ainda não possui matrículas registradas.
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

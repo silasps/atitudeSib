@@ -1,5 +1,6 @@
 import {
   getConsentLabel,
+  type VoluntariadoAdminChangeLogEntry,
   type VoluntariadoAuditArtifact,
   type VoluntariadoCandidaturaAudit,
   type VoluntariadoConsentDocument,
@@ -135,6 +136,7 @@ function buildAuditSnapshot(record: VoluntariadoDocumentRecord) {
     signature: record.audit?.signature ?? null,
     candidateSnapshot: record.audit?.candidateSnapshot ?? null,
     artifacts: record.audit?.artifacts ?? [],
+    changeHistory: record.audit?.changeHistory ?? [],
   };
 }
 
@@ -153,11 +155,43 @@ function renderDocumentDecision(document: VoluntariadoConsentDocument) {
   `;
 }
 
+function renderAdminChangeValue(value?: string | null) {
+  return escapeHtml(value || "Nao informado");
+}
+
+function renderAdminChangeEntry(entry: VoluntariadoAdminChangeLogEntry) {
+  const actor = entry.actorEmail || entry.actorUserId;
+
+  return `
+    <div class="signature-box">
+      <span class="metric-label">Atualizacao administrativa</span>
+      <p>
+        <strong>${escapeHtml(formatDateTime(entry.changedAt))}</strong>
+        por ${escapeHtml(actor)}
+      </p>
+      <ul class="change-list">
+        ${entry.changes
+          .map(
+            (change) => `
+              <li>
+                <strong>${escapeHtml(change.label)}</strong>
+                <span>Antes: ${renderAdminChangeValue(change.previousValue)}</span>
+                <span>Depois: ${renderAdminChangeValue(change.nextValue)}</span>
+              </li>
+            `
+          )
+          .join("")}
+      </ul>
+    </div>
+  `;
+}
+
 function renderVoluntariadoDossierHtml(record: VoluntariadoDocumentRecord) {
   const signedAt = resolveSignedAt(record);
   const documents = resolveDocuments(record);
   const signature = record.audit?.signature ?? null;
   const snapshot = record.audit?.candidateSnapshot ?? null;
+  const changeHistory = record.audit?.changeHistory ?? [];
   const observacaoLivre =
     record.audit?.observacaoLivre ?? record.observacaoLivre ?? null;
   const imageDecision = documents.find((document) => document.key === "uso_imagem");
@@ -297,6 +331,17 @@ function renderVoluntariadoDossierHtml(record: VoluntariadoDocumentRecord) {
         border-radius: 18px;
         padding: 16px;
         background: #fcfbf8;
+      }
+      .change-list {
+        margin: 14px 0 0;
+        padding-left: 18px;
+      }
+      .change-list li + li {
+        margin-top: 10px;
+      }
+      .change-list span {
+        display: block;
+        color: var(--muted);
       }
       .signature-box img {
         display: block;
@@ -468,6 +513,19 @@ function renderVoluntariadoDossierHtml(record: VoluntariadoDocumentRecord) {
                   snapshot.necessidadeTitulo || "Nao informada"
                 )}</strong></div>
               </div>
+            </section>`
+          : ""
+      }
+
+      ${
+        changeHistory.length
+          ? `<section class="section">
+              <h2>Historico de alteracoes administrativas</h2>
+              ${changeHistory
+                .slice()
+                .reverse()
+                .map(renderAdminChangeEntry)
+                .join("")}
             </section>`
           : ""
       }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfessorServerContext } from "@/lib/professor-server";
+import { getTurmaScheduleSummary } from "@/lib/turma-schedule";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +76,9 @@ export default async function ProfessorTurmasPage() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {(turmas as TurmaCard[]).map((turma) => {
             const matriculados = countByTurmaId.get(String(turma.id)) ?? 0;
+            const turmaScheduleSummary = getTurmaScheduleSummary(
+              turma.dias_horarios
+            );
 
             return (
               <div
@@ -87,7 +91,7 @@ export default async function ProfessorTurmasPage() {
                       {turma.nome}
                     </h2>
                     <p className="mt-1 text-sm text-zinc-500">
-                      {turma.dias_horarios || "Dias e horários não informados"}
+                      {turmaScheduleSummary || "Dias e horarios nao informados"}
                     </p>
                   </div>
 

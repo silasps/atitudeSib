@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { createClient } from "@supabase/supabase-js";
+import { resolveUserRole, isAdminRole, isProfessorOrAdminRole } from "@/lib/auth-utils";
 
 export default async function PainelRedirectPage() {
   const supabase = await createSupabaseServerClient();
@@ -13,35 +13,19 @@ export default async function PainelRedirectPage() {
     redirect("/login");
   }
 
-  // 1) Primeiro tenta app_metadata
-  let role =
-    ((user.app_metadata as Record<string, unknown>)?.app_role ??
-      (user.app_metadata as Record<string, unknown>)?.role ??
-      "") as string;
+  const { role, isActive } = await resolveUserRole(user);
 
-  // 2) Se não tiver app_role, consulta tabela admin_users com service role
-  if (!role && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
-    const { data: adminUser } = await supabaseAdmin
-      .from("admin_users")
-      .select("role")
-      .ilike("email", user.email ?? "")
-      .maybeSingle();
-    if (adminUser?.role) {
-      role = adminUser.role as string;
-    }
+  if (!isActive) {
+    redirect("/acesso-negado");
   }
 
-  const normalizedRole = role.toString().toLowerCase();
-
-  if (normalizedRole === "professor") {
+  if (isProfessorOrAdminRole(role) && !isAdminRole(role)) {
     redirect("/professor");
   }
 
-  // padrão: admin ou outro perfil
-  redirect("/admin");
+  if (isAdminRole(role)) {
+    redirect("/admin");
+  }
+
+  redirect("/acesso-negado");
 }

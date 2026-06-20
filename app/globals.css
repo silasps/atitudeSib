@@ -1,1 +1,77 @@
 @import "tailwindcss";
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: #ffffff;
+    color: #0f172a;
+  }
+
+  ::selection {
+    background: rgba(16, 185, 129, 0.18);
+    color: #0f172a;
+  }
+
+  :where(
+      a[href],
+      button:not(:disabled),
+      select:not(:disabled),
+      summary,
+      [role="button"]:not([aria-disabled="true"]),
+      input[type="button"]:not(:disabled),
+      input[type="submit"]:not(:disabled),
+      input[type="reset"]:not(:disabled),
+      input[type="checkbox"]:not(:disabled),
+      input[type="radio"]:not(:disabled),
+      input[type="color"]:not(:disabled),
+      input[type="file"]:not(:disabled),
+      input[type="date"]:not(:disabled),
+      input[type="datetime-local"]:not(:disabled),
+      input[type="month"]:not(:disabled),
+      input[type="time"]:not(:disabled),
+      input[type="week"]:not(:disabled),
+      option:not(:disabled),
+      label:has(input[type="checkbox"]:not(:disabled)),
+      label:has(input[type="radio"]:not(:disabled)),
+      label:has(input[type="file"]:not(:disabled))
+    ) {
+    cursor: pointer;
+  }
+
+  :where(
+      button:disabled,
+      select:disabled,
+      input[type="button"]:disabled,
+      input[type="submit"]:disabled,
+      input[type="reset"]:disabled,
+      input[type="checkbox"]:disabled,
+      input[type="radio"]:disabled,
+      input[type="color"]:disabled,
+      input[type="file"]:disabled,
+      input[type="date"]:disabled,
+      input[type="datetime-local"]:disabled,
+      input[type="month"]:disabled,
+      input[type="time"]:disabled,
+      input[type="week"]:disabled,
+      option:disabled,
+      [role="button"][aria-disabled="true"],
+      label:has(input[type="checkbox"]:disabled),
+      label:has(input[type="radio"]:disabled),
+      label:has(input[type="file"]:disabled)
+    ) {
+    cursor: not-allowed;
+  }
+
+  :where(
+      input[type="date"],
+      input[type="datetime-local"],
+      input[type="month"],
+      input[type="time"],
+      input[type="week"]
+    )::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+}

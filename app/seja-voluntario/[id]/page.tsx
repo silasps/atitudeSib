@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
+import { getInstitutionalContent } from "@/lib/public-site";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import {
   isNecessidadePublicamenteDisponivel,
@@ -15,6 +16,10 @@ type SiteConfig = {
   contact_email: string;
   contact_phone: string;
   contact_whatsapp: string;
+  instagram_url?: string;
+  facebook_url?: string;
+  youtube_url?: string;
+  about_text?: string;
 };
 
 const defaultConfig: SiteConfig = {
@@ -88,6 +93,9 @@ export default async function VagaVoluntariadoDetalhePage({
 
   const config = ((configData as Partial<SiteConfig> | null) ?? {});
   const siteConfig = { ...defaultConfig, ...config };
+  const institutionalContent = getInstitutionalContent({
+    about_text: siteConfig.about_text ?? "",
+  });
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
@@ -360,6 +368,10 @@ export default async function VagaVoluntariadoDetalhePage({
         contactEmail={siteConfig.contact_email}
         contactPhone={siteConfig.contact_phone}
         contactWhatsapp={siteConfig.contact_whatsapp}
+        instagramUrl={siteConfig.instagram_url}
+        facebookUrl={siteConfig.facebook_url}
+        youtubeUrl={siteConfig.youtube_url}
+        addressLine={institutionalContent.address}
       />
     </div>
   );
