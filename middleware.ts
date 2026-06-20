@@ -36,8 +36,9 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh da sessão (necessário para SSR)
-  const { data: { user } } = await supabase.auth.getUser()
+  // Lê a sessão dos cookies (sem chamada de rede — suficiente para redirect no middleware)
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user ?? null
 
   // Rotas protegidas que exigem autenticação
   const protectedPrefixes = ['/admin', '/professor', '/aluno', '/responsavel', '/superadmin']
