@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Ostrich Social',
+  title: 'Ostrick Social',
   description: 'Plataforma de gestão para projetos sociais',
 }
 

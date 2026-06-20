@@ -13,7 +13,7 @@ export default async function ProfessorLayout({ children }: { children: React.Re
   const tenantResult = await resolveOrgFromHost(host)
   const siteConfig = tenantResult ? await getSiteConfig(tenantResult.org.id) : null
 
-  const orgName = siteConfig?.hero_titulo || tenantResult?.org.nome || 'Ostrich Social'
+  const orgName = siteConfig?.hero_titulo || tenantResult?.org.nome || 'Ostrick Social'
   const logoUrl = siteConfig?.logo_url || null
   const corPrimaria = siteConfig?.cor_primaria || 'azul-oceano'
   const colors = COLOR_PALETTE[corPrimaria as keyof typeof COLOR_PALETTE] || COLOR_PALETTE['azul-oceano']

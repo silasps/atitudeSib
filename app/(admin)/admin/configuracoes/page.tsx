@@ -27,7 +27,7 @@ export default async function ConfiguracoesPage() {
           <div className="px-6 py-4 flex justify-between items-center">
             <span className="text-sm text-gray-500">Subdomínio</span>
             <span className="text-sm font-medium text-gray-900">
-              {org.slug}.ostrichsocial.com.br
+              {org.slug}.ostricksocial.com.br
             </span>
           </div>
           {org.cnpj && (

@@ -28,8 +28,8 @@ export default async function EntrarPage({
     : null
 
   const orgName = siteConfig
-    ? (siteConfig.hero_titulo || tenantResult?.org.nome || 'Ostrich Social')
-    : 'Ostrich Social'
+    ? (siteConfig.hero_titulo || tenantResult?.org.nome || 'Ostrick Social')
+    : 'Ostrick Social'
 
   const logoUrl = siteConfig?.logo_url || null
   const corPrimaria = siteConfig?.cor_primaria || 'azul-oceano'

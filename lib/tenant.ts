@@ -9,15 +9,15 @@ export function getSlugFromHost(host: string): string | null {
   // Domínios raiz da plataforma (sem tenant)
   const platformDomains = [
     'localhost',
-    'ostrichsocial.com.br',
-    'www.ostrichsocial.com.br',
+    'ostricksocial.com.br',
+    'www.ostricksocial.com.br',
   ]
 
   if (platformDomains.includes(hostname)) return null
 
-  // Subdomínio: atitude.ostrichsocial.com.br → 'atitude'
-  if (hostname.endsWith('.ostrichsocial.com.br')) {
-    return hostname.replace('.ostrichsocial.com.br', '')
+  // Subdomínio: atitude.ostricksocial.com.br → 'atitude'
+  if (hostname.endsWith('.ostricksocial.com.br')) {
+    return hostname.replace('.ostricksocial.com.br', '')
   }
 
   // Dev: atitude.localhost → 'atitude'

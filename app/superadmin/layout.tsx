@@ -13,7 +13,7 @@ export default async function SuperadminLayout({ children }: { children: React.R
           <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
             <span className="text-xs font-black">OS</span>
           </div>
-          <span className="text-sm font-semibold">Ostrich Social</span>
+          <span className="text-sm font-semibold">Ostrick Social</span>
         </div>
 
         <nav className="space-y-1 flex-1">

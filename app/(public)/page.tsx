@@ -134,7 +134,7 @@ export default async function PublicHomePage() {
               )}
             </div>
             <p className="mt-8 text-white/40 text-xs">
-              Powered by Ostrich Social
+              Powered by Ostrick Social
             </p>
           </footer>
         )}
@@ -150,7 +150,7 @@ function PlatformLanding() {
         <div className="w-24 h-24 bg-white/20 rounded-3xl flex items-center justify-center mx-auto mb-8">
           <span className="text-4xl font-black">OS</span>
         </div>
-        <h1 className="text-5xl font-bold mb-4">Ostrich Social</h1>
+        <h1 className="text-5xl font-bold mb-4">Ostrick Social</h1>
         <p className="text-xl text-blue-200 mb-8">
           Plataforma completa de gestão para projetos sociais e ONGs
         </p>

@@ -87,7 +87,7 @@ export default function NovaOrgForm() {
                 className="flex-1 px-3 py-2.5 bg-white/5 border border-white/10 rounded-l-lg text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500"
               />
               <span className="px-3 py-2.5 bg-white/5 border border-l-0 border-white/10 rounded-r-lg text-xs text-gray-500">
-                .ostrichsocial.com.br
+                .ostricksocial.com.br
               </span>
             </div>
           </div>
