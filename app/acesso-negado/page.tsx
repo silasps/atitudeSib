@@ -1,24 +1,23 @@
-import Link from "next/link";
+import Link from 'next/link'
 
 export default function AcessoNegadoPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-100 p-4 md: p-6">
-      <div className="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-zinc-900">Acesso não autorizado</h1>
-        <p className="mt-3 leading-7 text-zinc-600">
-          Seu login foi reconhecido, mas você ainda não possui cadastro liberado
-          para acessar o painel. Solicite ao administrador que crie ou ative seu cadastro.
-        </p>
-
-        <div className="mt-6">
-          <Link
-            href="/login"
-            className="rounded-xl border border-zinc-300 px-4 py-3 text-sm font-medium text-zinc-900"
-          >
-            Voltar para login
-          </Link>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+      <div className="text-center max-w-md">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span className="text-2xl">🚫</span>
         </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Acesso negado</h1>
+        <p className="text-gray-500 mb-6">
+          Você não tem permissão para acessar esta página.
+        </p>
+        <Link
+          href="/entrar"
+          className="inline-block px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-sm"
+        >
+          Voltar ao login
+        </Link>
       </div>
-    </main>
-  );
+    </div>
+  )
 }

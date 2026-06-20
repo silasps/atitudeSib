@@ -1,62 +1,65 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { getSlugFromHost } from '@/lib/tenant'
 
-const ADMIN_ONLY_PREFIX = ["/admin"];
-const PROFESSOR_PREFIX = ["/professor"];
-const FAMILIA_PREFIX = ["/familia"];
-const ALUNO_PREFIX = ["/aluno"];
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const host = request.headers.get('host') || 'localhost'
 
-function startsWithAny(pathname: string, prefixes: string[]) {
-  return prefixes.some((p) => pathname.startsWith(p));
-}
+  // Resolve tenant pelo host e injeta como header para Server Components
+  const slug = getSlugFromHost(host)
+  const requestHeaders = new Headers(request.headers)
+  if (slug) {
+    requestHeaders.set('x-tenant-slug', slug)
+  }
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+  // Cria resposta base com headers do tenant
+  let response = NextResponse.next({ request: { headers: requestHeaders } })
+
+  // Cria cliente Supabase para refresh de sessão
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return req.cookies.getAll();
-        },
-        setAll(cookies) {
-          cookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          response = NextResponse.next({ request: { headers: requestHeaders } })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
         },
       },
     }
-  );
+  )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Refresh da sessão (necessário para SSR)
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const pathname = req.nextUrl.pathname;
+  // Rotas protegidas que exigem autenticação
+  const protectedPrefixes = ['/admin', '/professor', '/aluno', '/responsavel', '/superadmin']
+  const isProtected = protectedPrefixes.some(p => pathname.startsWith(p))
 
-  // Apenas exige autenticação para áreas protegidas; a checagem de role fica nos layouts.
-  if (
-    !user &&
-    startsWithAny(pathname, [
-      ...ADMIN_ONLY_PREFIX,
-      ...PROFESSOR_PREFIX,
-      ...FAMILIA_PREFIX,
-      ...ALUNO_PREFIX,
-    ])
-  ) {
-    const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(redirectUrl);
+  if (isProtected && !user) {
+    const loginUrl = new URL('/entrar', request.url)
+    loginUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
-  return res;
+  // Redireciona usuário logado que acessa /entrar para o seu painel
+  if (pathname === '/entrar' && user) {
+    // O destino correto é determinado no Server Component do /entrar
+    // Apenas deixa passar — o page.tsx decide o redirect
+  }
+
+  return response
 }
 
 export const config = {
   matcher: [
-    "/admin/:path*",
-    "/professor/:path*",
-    "/familia/:path*",
-    "/aluno/:path*",
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-};
+}
