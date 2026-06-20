@@ -58,7 +58,7 @@ function CopyLink({ link }: { link: string }) {
   )
 }
 
-export default function GerenciarTermos({ alunoId, alunoNome, alunoEmail, termos, siteUrl }: Props) {
+export default function GerenciarTermos({ alunoId, alunoNome: _alunoNome, alunoEmail, termos, siteUrl }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [novoTermo, setNovoTermo] = useState<{ token: string; link: string } | null>(null)

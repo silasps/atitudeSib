@@ -1,7 +1,7 @@
 import { createServiceClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Users, Building2 } from 'lucide-react'
+import { ArrowLeft, Users } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import type { Organization, Profile } from '@/types'
 import OrgAcoesForm from './org-acoes-form'

@@ -5,7 +5,6 @@ import { headers } from 'next/headers'
 import { createHash, randomInt } from 'crypto'
 import { TERMOS_ALUNO_CONTENT } from '@/lib/termos/content-aluno'
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ostricksocial.com.br'
 
 function hashOtp(otp: string, token: string) {
   return createHash('sha256').update(otp + token).digest('hex')

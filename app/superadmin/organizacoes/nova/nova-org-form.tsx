@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 
 export default function NovaOrgForm() {
@@ -177,12 +178,12 @@ export default function NovaOrgForm() {
           {loading && <Loader2 size={15} className="animate-spin" />}
           Criar organização
         </button>
-        <a
+        <Link
           href="/superadmin/organizacoes"
           className="px-5 py-2.5 text-gray-400 hover:text-white text-sm transition"
         >
           Cancelar
-        </a>
+        </Link>
       </div>
     </form>
   )
