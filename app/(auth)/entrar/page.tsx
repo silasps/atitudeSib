@@ -81,10 +81,7 @@ export default async function EntrarPage({
             <h2 className="text-xl font-semibold text-gray-900 mb-1">Entrar na plataforma</h2>
             <p className="text-sm text-gray-500 mb-6">Use seu email e senha cadastrados</p>
 
-            <LoginForm
-              redirectTo={params.redirect || undefined}
-              primaryColor={colors.primary}
-            />
+            <LoginForm primaryColor={colors.primary} />
           </div>
         </div>
       </div>

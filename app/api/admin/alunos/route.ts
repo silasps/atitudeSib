@@ -9,7 +9,11 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { nome, data_nascimento, telefone, cpf, status, endereco, observacoes } = body
+  const {
+    nome, data_nascimento, telefone, email, cpf,
+    documento_tipo, documento_numero, sexo, status,
+    autorizacao_imagem, endereco, dados_complementares, observacoes,
+  } = body
 
   if (!nome) {
     return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })
@@ -22,9 +26,15 @@ export async function POST(request: Request) {
     nome,
     data_nascimento: data_nascimento || null,
     telefone: telefone || null,
+    email: email || null,
     cpf_encrypted: cpf || null,
-    status: status || 'ativo',
+    documento_tipo: documento_tipo || 'rg',
+    documento_numero: documento_numero || null,
+    sexo: sexo || null,
+    status: status || 'aguardando',
+    autorizacao_imagem: autorizacao_imagem ?? null,
     endereco: endereco || {},
+    dados_complementares: dados_complementares || {},
     observacoes: observacoes || null,
     data_admissao: new Date().toISOString().split('T')[0],
   }).select().single()

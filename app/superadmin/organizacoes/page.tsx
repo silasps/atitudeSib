@@ -55,17 +55,17 @@ export default async function OrganizacoesPage() {
               {orgs.map((org: Organization) => (
                 <tr key={org.id} className="hover:bg-white/5 transition">
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
+                    <Link href={`/superadmin/organizacoes/${org.id}`} className="flex items-center gap-3 group">
                       <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
                         <span className="text-xs font-bold text-blue-400">
                           {org.nome.charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-white">{org.nome}</p>
+                        <p className="font-medium text-white group-hover:text-blue-400 transition">{org.nome}</p>
                         {org.cnpj && <p className="text-xs text-gray-500">{org.cnpj}</p>}
                       </div>
-                    </div>
+                    </Link>
                   </td>
                   <td className="px-6 py-4 font-mono text-xs text-gray-400">{org.slug}</td>
                   <td className="px-6 py-4">

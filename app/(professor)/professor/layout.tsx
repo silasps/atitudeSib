@@ -26,7 +26,7 @@ export default async function ProfessorLayout({ children }: { children: React.Re
         primaryColor={colors.primary}
         userNome={profile.nome}
       />
-      <main className="flex-1 overflow-auto pt-14 lg:pt-0 min-w-0">{children}</main>
+      <main className="flex-1 overflow-auto pb-16 lg:pb-0 min-w-0">{children}</main>
     </div>
   )
 }

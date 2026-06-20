@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen,
-  Heart, Globe, Settings, LogOut, Menu, X, ChevronRight
+  Heart, Globe, Settings, LogOut, ChevronRight
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import type { UserRole } from '@/types'
@@ -24,41 +23,22 @@ const NAV_ITEMS = [
   { label: 'Alunos', href: '/admin/alunos', icon: GraduationCap },
   { label: 'Turmas', href: '/admin/turmas', icon: BookOpen },
   { label: 'Voluntariado', href: '/admin/voluntariado', icon: Heart },
-  { label: 'Site Público', href: '/admin/site', icon: Globe },
-  { label: 'Configurações', href: '/admin/configuracoes', icon: Settings },
+  { label: 'Site', href: '/admin/site', icon: Globe },
+  { label: 'Config', href: '/admin/configuracoes', icon: Settings },
 ]
 
 export default function AdminSidebar({
   orgName, logoUrl, primaryColor, userNome, userRole
 }: AdminSidebarProps) {
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
+
+  const isActive = (href: string) =>
+    href === '/admin' ? pathname === '/admin' : pathname.startsWith(href)
 
   return (
     <>
-      {/* Mobile toggle */}
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed top-4 left-4 z-30 lg:hidden p-2 bg-white rounded-lg shadow-sm border border-gray-200"
-      >
-        <Menu size={20} className="text-gray-600" />
-      </button>
-
-      {/* Overlay mobile */}
-      {open && (
-        <div
-          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          'fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col transition-transform lg:static lg:translate-x-0 lg:z-auto shrink-0',
-          open ? 'translate-x-0' : '-translate-x-full'
-        )}
-      >
+      {/* Sidebar — desktop only */}
+      <aside className="hidden lg:flex w-60 shrink-0 flex-col bg-white border-r border-gray-200">
         {/* Cabeçalho da org */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
           {logoUrl ? (
@@ -72,33 +52,27 @@ export default function AdminSidebar({
             </div>
           )}
           <span className="text-sm font-semibold text-gray-900 truncate">{orgName}</span>
-          <button onClick={() => setOpen(false)} className="ml-auto lg:hidden text-gray-400">
-            <X size={18} />
-          </button>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-auto">
           {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
-            const isActive = href === '/admin'
-              ? pathname === '/admin'
-              : pathname.startsWith(href)
+            const active = isActive(href)
             return (
               <Link
                 key={href}
                 href={href}
-                onClick={() => setOpen(false)}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition group',
-                  isActive
+                  active
                     ? 'text-white font-medium'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 )}
-                style={isActive ? { backgroundColor: primaryColor } : {}}
+                style={active ? { backgroundColor: primaryColor } : {}}
               >
-                <Icon size={16} className={isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'} />
-                {label}
-                {isActive && <ChevronRight size={14} className="ml-auto text-white/70" />}
+                <Icon size={16} className={active ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'} />
+                {label === 'Site' ? 'Site Público' : label === 'Config' ? 'Configurações' : label}
+                {active && <ChevronRight size={14} className="ml-auto text-white/70" />}
               </Link>
             )
           })}
@@ -129,6 +103,37 @@ export default function AdminSidebar({
           </form>
         </div>
       </aside>
+
+      {/* Bottom nav — mobile only */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 flex items-stretch">
+        {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+          const active = isActive(href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors"
+              style={active ? { color: primaryColor } : {}}
+            >
+              <Icon
+                size={20}
+                style={active ? { color: primaryColor } : {}}
+                className={active ? '' : 'text-gray-400'}
+              />
+              <span className={active ? '' : 'text-gray-400'}>{label}</span>
+            </Link>
+          )
+        })}
+        <form action="/api/auth/signout" method="post" className="flex flex-1">
+          <button
+            type="submit"
+            className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium text-gray-400"
+          >
+            <LogOut size={20} />
+            <span>Sair</span>
+          </button>
+        </form>
+      </nav>
     </>
   )
 }
