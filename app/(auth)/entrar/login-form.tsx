@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { getLoginDestination } from '@/lib/auth-client'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
@@ -12,7 +11,6 @@ interface LoginFormProps {
 }
 
 export default function LoginForm({ redirectTo, primaryColor }: LoginFormProps) {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -26,9 +24,9 @@ export default function LoginForm({ redirectTo, primaryColor }: LoginFormProps) 
 
     try {
       const supabase = createClient()
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
-      if (signInError) {
+      if (signInError || !user) {
         setError('Email ou senha incorretos. Tente novamente.')
         return
       }
@@ -37,11 +35,12 @@ export default function LoginForm({ redirectTo, primaryColor }: LoginFormProps) 
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
+        .eq('id', user.id)
         .single()
 
       const destination = redirectTo || (profile ? getLoginDestination(profile.role) : '/admin')
-      router.push(destination)
-      router.refresh()
+      // Navegação completa para garantir que os cookies de sessão sejam enviados ao servidor
+      window.location.href = destination
     } catch {
       setError('Erro ao conectar. Verifique sua conexão e tente novamente.')
     } finally {
