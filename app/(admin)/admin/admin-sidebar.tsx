@@ -7,6 +7,13 @@ import {
   Heart, Globe, Settings, LogOut, ChevronRight
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
+import {
+  canVerDashboard, canVerAlunos, canVerTurmas,
+  canGerenciarUsuarios, canGerenciarVoluntariado,
+  canGerenciarSite, canGerenciarConfiguracoes,
+  ROLE_LABELS,
+} from '@/lib/rbac'
+import { RolePreviewSelector } from '@/components/admin/role-preview-selector'
 import type { UserRole } from '@/types'
 
 interface AdminSidebarProps {
@@ -15,25 +22,29 @@ interface AdminSidebarProps {
   primaryColor: string
   userNome: string
   userRole: UserRole
+  effectiveRole: UserRole
+  previewRole: UserRole | null
 }
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { label: 'Usuários', href: '/admin/usuarios', icon: Users },
-  { label: 'Alunos', href: '/admin/alunos', icon: GraduationCap },
-  { label: 'Turmas', href: '/admin/turmas', icon: BookOpen },
-  { label: 'Voluntariado', href: '/admin/voluntariado', icon: Heart },
-  { label: 'Site', href: '/admin/site', icon: Globe },
-  { label: 'Config', href: '/admin/configuracoes', icon: Settings },
+  { label: 'Dashboard',    href: '/admin',                icon: LayoutDashboard, can: canVerDashboard },
+  { label: 'Usuários',     href: '/admin/usuarios',       icon: Users,           can: canGerenciarUsuarios },
+  { label: 'Alunos',       href: '/admin/alunos',         icon: GraduationCap,   can: canVerAlunos },
+  { label: 'Turmas',       href: '/admin/turmas',         icon: BookOpen,        can: canVerTurmas },
+  { label: 'Voluntariado', href: '/admin/voluntariado',   icon: Heart,           can: canGerenciarVoluntariado },
+  { label: 'Site Público', href: '/admin/site',           icon: Globe,           can: canGerenciarSite },
+  { label: 'Configurações',href: '/admin/configuracoes',  icon: Settings,        can: canGerenciarConfiguracoes },
 ]
 
 export default function AdminSidebar({
-  orgName, logoUrl, primaryColor, userNome, userRole
+  orgName, logoUrl, primaryColor, userNome, userRole, effectiveRole, previewRole
 }: AdminSidebarProps) {
   const pathname = usePathname()
 
   const isActive = (href: string) =>
     href === '/admin' ? pathname === '/admin' : pathname.startsWith(href)
+
+  const visibleItems = NAV_ITEMS.filter(({ can }) => can(effectiveRole))
 
   return (
     <>
@@ -54,9 +65,14 @@ export default function AdminSidebar({
           <span className="text-sm font-semibold text-gray-900 truncate">{orgName}</span>
         </div>
 
+        {/* Seletor de preview — apenas superadmin */}
+        {userRole === 'superadmin' && (
+          <RolePreviewSelector currentPreview={previewRole} />
+        )}
+
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-auto">
-          {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+          {visibleItems.map(({ label, href, icon: Icon }) => {
             const active = isActive(href)
             return (
               <Link
@@ -64,14 +80,12 @@ export default function AdminSidebar({
                 href={href}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition group',
-                  active
-                    ? 'text-white font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  active ? 'text-white font-medium' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 )}
                 style={active ? { backgroundColor: primaryColor } : {}}
               >
                 <Icon size={16} className={active ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'} />
-                {label === 'Site' ? 'Site Público' : label === 'Config' ? 'Configurações' : label}
+                {label}
                 {active && <ChevronRight size={14} className="ml-auto text-white/70" />}
               </Link>
             )
@@ -89,7 +103,7 @@ export default function AdminSidebar({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-gray-900 truncate">{userNome}</p>
-              <p className="text-xs text-gray-400 capitalize">{userRole}</p>
+              <p className="text-xs text-gray-400 capitalize">{ROLE_LABELS[userRole]}</p>
             </div>
           </div>
           <form action="/api/auth/signout" method="post">
@@ -106,7 +120,7 @@ export default function AdminSidebar({
 
       {/* Bottom nav — mobile only */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 flex items-stretch">
-        {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+        {visibleItems.map(({ label, href, icon: Icon }) => {
           const active = isActive(href)
           return (
             <Link

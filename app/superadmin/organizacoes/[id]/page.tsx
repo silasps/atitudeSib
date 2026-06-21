@@ -23,22 +23,22 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
   const alunoCount = profiles?.filter(p => p.role === 'aluno').length ?? 0
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-4 sm:p-8 max-w-4xl">
       <Link href="/superadmin/organizacoes" className="flex items-center gap-2 text-gray-400 hover:text-white text-sm mb-6 transition">
         <ArrowLeft size={16} /> Voltar para organizações
       </Link>
 
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex items-start justify-between gap-3 mb-8">
         <div>
           <h1 className="text-2xl font-bold">{org.nome}</h1>
           <p className="text-gray-400 text-sm mt-1 font-mono">{org.slug}</p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${org.ativo ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+        <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium ${org.ativo ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
           {org.ativo ? 'Ativa' : 'Inativa'}
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-3 gap-3 mb-8">
         {[
           { label: 'Admins / Funcionários', value: adminCount },
           { label: 'Professores', value: professorCount },
@@ -71,6 +71,7 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
             <Users size={16} className="text-gray-400" />
             <h2 className="font-semibold">Usuários da organização</h2>
           </div>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wide">
@@ -99,6 +100,7 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

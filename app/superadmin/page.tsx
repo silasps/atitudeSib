@@ -9,10 +9,10 @@ export default async function SuperadminDashboardPage() {
   ])
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       <h1 className="text-2xl font-bold mb-8">Dashboard da Plataforma</h1>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard label="Organizações" value={orgsCount ?? 0} />
         <StatCard label="Usuários totais" value={profilesCount ?? 0} />
       </div>

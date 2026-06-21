@@ -12,7 +12,7 @@ export default async function ConfiguracoesPage() {
     .single()
 
   return (
-    <div className="p-6 lg:p-8 max-w-2xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-2xl">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Configurações</h1>
         <p className="text-gray-500 text-sm mt-1">Informações da sua organização</p>
@@ -24,9 +24,9 @@ export default async function ConfiguracoesPage() {
             <span className="text-sm text-gray-500">Nome</span>
             <span className="text-sm font-medium text-gray-900">{org.nome}</span>
           </div>
-          <div className="px-6 py-4 flex justify-between items-center">
+          <div className="px-6 py-4 flex flex-wrap justify-between items-center gap-2">
             <span className="text-sm text-gray-500">Subdomínio</span>
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-sm font-medium text-gray-900 break-all">
               {org.slug}.ostricksocial.com.br
             </span>
           </div>

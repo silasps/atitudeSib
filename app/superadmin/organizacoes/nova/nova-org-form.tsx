@@ -79,15 +79,15 @@ export default function NovaOrgForm() {
 
           <div>
             <label className="block text-sm text-gray-400 mb-1">Slug (subdomínio) *</label>
-            <div className="flex items-center">
+            <div className="flex items-center min-w-0">
               <input
                 value={form.slug}
                 onChange={e => setForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
                 required
                 placeholder="atitude"
-                className="flex-1 px-3 py-2.5 bg-white/5 border border-white/10 rounded-l-lg text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500"
+                className="flex-1 min-w-0 px-3 py-2.5 bg-white/5 border border-white/10 rounded-l-lg text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500"
               />
-              <span className="px-3 py-2.5 bg-white/5 border border-l-0 border-white/10 rounded-r-lg text-xs text-gray-500">
+              <span className="shrink-0 px-2 py-2.5 bg-white/5 border border-l-0 border-white/10 rounded-r-lg text-xs text-gray-500 truncate max-w-[140px]">
                 .ostricksocial.com.br
               </span>
             </div>

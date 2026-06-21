@@ -41,7 +41,7 @@ export default async function TurmaDetailPage({
     .limit(5)
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6">
         <Link href="/professor/turmas" className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1 mb-3">
           ← Minhas turmas

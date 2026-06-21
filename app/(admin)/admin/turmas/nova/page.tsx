@@ -16,7 +16,7 @@ export default async function NovaTurmaPage() {
     .order('nome')
 
   return (
-    <div className="p-6 lg:p-8 max-w-2xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-2xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Nova turma</h1>
       <p className="text-gray-500 text-sm mb-8">Configure a turma com horário e professor responsável.</p>
       <NovaTurmaForm professores={(professores || []) as Pick<Profile, 'id' | 'nome'>[]} />

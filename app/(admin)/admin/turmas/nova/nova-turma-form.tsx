@@ -103,19 +103,21 @@ export default function NovaTurmaForm({
         ) : (
           <div className="space-y-3">
             {horario.map((h, idx) => (
-              <div key={idx} className="flex items-center gap-3">
+              <div key={idx} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <select value={h.dia} onChange={e => updateHorario(idx, 'dia', e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  className="sm:flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                   {DIAS.map(d => <option key={d}>{d}</option>)}
                 </select>
-                <input type="time" value={h.hora_inicio} onChange={e => updateHorario(idx, 'hora_inicio', e.target.value)}
-                  className="w-28 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <span className="text-gray-400 text-sm">até</span>
-                <input type="time" value={h.hora_fim} onChange={e => updateHorario(idx, 'hora_fim', e.target.value)}
-                  className="w-28 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <button type="button" onClick={() => removeHorario(idx)} className="text-gray-400 hover:text-red-500 transition">
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <input type="time" value={h.hora_inicio} onChange={e => updateHorario(idx, 'hora_inicio', e.target.value)}
+                    className="flex-1 sm:w-28 sm:flex-none px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <span className="text-gray-400 text-sm shrink-0">até</span>
+                  <input type="time" value={h.hora_fim} onChange={e => updateHorario(idx, 'hora_fim', e.target.value)}
+                    className="flex-1 sm:w-28 sm:flex-none px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <button type="button" onClick={() => removeHorario(idx)} className="text-gray-400 hover:text-red-500 transition shrink-0">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>

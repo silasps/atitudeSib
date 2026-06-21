@@ -35,7 +35,7 @@ export default function OrgAcoesForm({ org }: { org: Organization }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-6 items-end">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
         <div>
           <label className="block text-xs text-gray-400 mb-1">Plano</label>
           <select
@@ -72,7 +72,7 @@ export default function OrgAcoesForm({ org }: { org: Organization }) {
         <button
           onClick={handleSave}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-500 transition disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-500 transition disabled:opacity-50 self-start sm:self-auto"
         >
           {loading && <Loader2 size={14} className="animate-spin" />}
           Salvar

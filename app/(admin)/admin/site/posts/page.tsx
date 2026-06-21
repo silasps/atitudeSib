@@ -16,8 +16,8 @@ export default async function PostsPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
         <div>
           <a href="/admin/site" className="text-sm text-gray-400 hover:text-gray-600 mb-1 inline-block">← Site Público</a>
           <h1 className="text-2xl font-bold text-gray-900">Projetos e Notícias</h1>

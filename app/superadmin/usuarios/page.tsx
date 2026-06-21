@@ -11,13 +11,13 @@ export default async function UsuariosPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Usuários</h1>
         <p className="text-gray-400 text-sm mt-1">{profiles?.length ?? 0} usuários em toda a plataforma</p>
       </div>
 
-      <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+      <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wide">

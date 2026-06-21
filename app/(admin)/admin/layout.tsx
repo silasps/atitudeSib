@@ -5,6 +5,10 @@ import { COLOR_PALETTE } from '@/types'
 import { createServiceClient } from '@/lib/supabase-server'
 import AdminSidebar from './admin-sidebar'
 import ImpersonationBanner from '@/components/superadmin/impersonation-banner'
+import { RolePreviewBanner } from '@/components/admin/role-preview-banner'
+import type { UserRole } from '@/types'
+
+const PREVIEWABLE: UserRole[] = ['admin', 'funcionario']
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { profile } = await requireRole(['admin', 'funcionario', 'superadmin'])
@@ -13,13 +17,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const impOrgId = cookieStore.get('sa_imp_org_id')?.value
   const isImpersonating = !!impOrgId && profile.role === 'superadmin'
 
+  // Preview de role — apenas superadmin pode simular outras roles
+  const previewCookie = cookieStore.get('os_admin_preview_role')?.value ?? null
+  const previewRole: UserRole | null =
+    profile.role === 'superadmin' && previewCookie && PREVIEWABLE.includes(previewCookie as UserRole)
+      ? (previewCookie as UserRole)
+      : null
+  const effectiveRole: UserRole = previewRole ?? profile.role
+
   let orgName = 'Ostrick Social'
   let logoUrl: string | null = null
   let colors = COLOR_PALETTE['azul-oceano']
   let impOrgNome = ''
 
   if (isImpersonating) {
-    // Resolve org pelo ID do cookie de impersonação
     const supabase = await createServiceClient()
     const { data: org } = await supabase.from('organizations').select('*').eq('id', impOrgId).single()
     if (org) {
@@ -41,8 +52,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     colors = COLOR_PALETTE[cor as keyof typeof COLOR_PALETTE] || COLOR_PALETTE['azul-oceano']
   }
 
+  const topPadding = previewRole
+    ? isImpersonating ? 'pt-20' : 'pt-10'
+    : isImpersonating ? 'pt-4 lg:pt-10' : 'pt-0'
+
   return (
     <div className="min-h-screen flex bg-gray-50">
+      {previewRole && <RolePreviewBanner previewRole={previewRole} />}
       {isImpersonating && <ImpersonationBanner orgNome={impOrgNome} />}
       <AdminSidebar
         orgName={orgName}
@@ -50,8 +66,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         primaryColor={colors.primary}
         userNome={profile.nome}
         userRole={profile.role}
+        effectiveRole={effectiveRole}
+        previewRole={previewRole}
       />
-      <main className={`flex-1 overflow-auto min-w-0 pb-16 lg:pb-0 ${isImpersonating ? 'pt-4 lg:pt-10' : 'pt-0 lg:pt-0'}`}>
+      <main className={`flex-1 overflow-auto pb-16 lg:pb-0 ${topPadding}`}>
         {children}
       </main>
     </div>

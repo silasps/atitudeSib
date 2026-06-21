@@ -13,8 +13,8 @@ export default async function OrganizacoesPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-8">
+      <div className="flex items-center justify-between gap-3 mb-8">
         <div>
           <h1 className="text-2xl font-bold">Organizações</h1>
           <p className="text-gray-400 text-sm mt-1">{orgs?.length ?? 0} organizações cadastradas</p>
@@ -28,7 +28,7 @@ export default async function OrganizacoesPage() {
         </Link>
       </div>
 
-      <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+      <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden overflow-x-auto">
         {!orgs?.length ? (
           <div className="py-16 text-center text-gray-500">
             <Building2 size={40} className="mx-auto mb-3 opacity-30" />

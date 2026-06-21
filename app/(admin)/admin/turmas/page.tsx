@@ -37,15 +37,15 @@ export default async function TurmasPage() {
   }, {})
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Turmas</h1>
           <p className="text-gray-500 text-sm mt-1">{turmas?.length ?? 0} turmas cadastradas</p>
         </div>
         <Link
           href="/admin/turmas/nova"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
         >
           <Plus size={16} />
           Nova turma
