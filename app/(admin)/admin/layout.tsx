@@ -6,6 +6,7 @@ import { createServiceClient } from '@/lib/supabase-server'
 import AdminSidebar from './admin-sidebar'
 import ImpersonationBanner from '@/components/superadmin/impersonation-banner'
 import { RolePreviewBanner } from '@/components/admin/role-preview-banner'
+import { RolePreviewDropdown } from '@/components/admin/role-preview-dropdown'
 import type { UserRole } from '@/types'
 
 const PREVIEWABLE: UserRole[] = ['admin', 'funcionario']
@@ -67,11 +68,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         userNome={profile.nome}
         userRole={profile.role}
         effectiveRole={effectiveRole}
-        previewRole={previewRole}
       />
-      <main className={`flex-1 overflow-auto pb-16 lg:pb-0 ${topPadding}`}>
-        {children}
-      </main>
+      <div className="flex-1 flex flex-col min-w-0 overflow-auto">
+        {/* Topbar "Visualizar como" — desktop, superadmin only */}
+        {profile.role === 'superadmin' && (
+          <div className="hidden lg:flex sticky top-0 z-20 bg-white/90 backdrop-blur-sm border-b border-gray-100 px-6 h-12 items-center justify-end shrink-0">
+            <RolePreviewDropdown currentPreview={previewRole} />
+          </div>
+        )}
+        <main className={`flex-1 pb-16 lg:pb-0 ${topPadding}`}>
+          {children}
+        </main>
+      </div>
     </div>
   )
 }

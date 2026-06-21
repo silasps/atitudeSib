@@ -1,8 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, BookOpen, MessageSquare, LogOut, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, BookOpen, MessageSquare, LogOut, ChevronRight, MoreHorizontal } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 
 interface Props {
@@ -13,16 +14,25 @@ interface Props {
 }
 
 const NAV_ITEMS = [
-  { label: 'Início', href: '/professor', icon: LayoutDashboard },
-  { label: 'Minhas Turmas', href: '/professor/turmas', icon: BookOpen },
-  { label: 'Comunicados', href: '/professor/comunicados', icon: MessageSquare },
+  { label: 'Início',        href: '/professor',             icon: LayoutDashboard },
+  { label: 'Minhas Turmas', href: '/professor/turmas',      icon: BookOpen },
+  { label: 'Comunicados',   href: '/professor/comunicados', icon: MessageSquare },
 ]
+
+const MAX_PRIMARY = 4
 
 export default function ProfessorSidebar({ orgName, logoUrl, primaryColor, userNome }: Props) {
   const pathname = usePathname()
+  const [maisOpen, setMaisOpen] = useState(false)
 
   const isActive = (href: string) =>
     href === '/professor' ? pathname === '/professor' : pathname.startsWith(href)
+
+  const showMais = NAV_ITEMS.length > MAX_PRIMARY
+  const primaryItems = showMais ? NAV_ITEMS.slice(0, MAX_PRIMARY) : NAV_ITEMS
+  const overflowItems = showMais ? NAV_ITEMS.slice(MAX_PRIMARY) : []
+  const totalSlots = primaryItems.length + 1
+  const centerIdx = Math.floor((totalSlots - 1) / 2)
 
   return (
     <>
@@ -73,31 +83,80 @@ export default function ProfessorSidebar({ orgName, logoUrl, primaryColor, userN
       </aside>
 
       {/* Bottom nav — mobile only */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 flex items-stretch">
-        {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 flex items-end">
+        {primaryItems.map(({ label, href, icon: Icon }, idx) => {
           const active = isActive(href)
+          const isCenter = idx === centerIdx
+
+          if (isCenter) {
+            return (
+              <Link key={href} href={href} onClick={() => setMaisOpen(false)} className="flex flex-1 flex-col items-center gap-0.5 pb-2">
+                <div className="w-12 h-12 -mt-4 rounded-full flex items-center justify-center shadow-md transition-colors"
+                  style={{ backgroundColor: active ? primaryColor : `${primaryColor}20` }}>
+                  <Icon size={22} style={{ color: active ? 'white' : primaryColor }} />
+                </div>
+                <span className="text-[10px] font-medium" style={{ color: active ? primaryColor : '#9ca3af' }}>{label}</span>
+              </Link>
+            )
+          }
+
           return (
-            <Link
-              key={href}
-              href={href}
+            <Link key={href} href={href} onClick={() => setMaisOpen(false)}
               className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors"
               style={active ? { color: primaryColor } : {}}
             >
-              <Icon size={20} style={active ? { color: primaryColor } : {}} className={active ? '' : 'text-gray-400'} />
+              <Icon size={20} className={active ? '' : 'text-gray-400'} style={active ? { color: primaryColor } : {}} />
               <span className={active ? '' : 'text-gray-400'}>{label}</span>
             </Link>
           )
         })}
-        <form action="/api/auth/signout" method="post" className="flex flex-1">
-          <button
-            type="submit"
-            className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium text-gray-400"
-          >
-            <LogOut size={20} />
-            <span>Sair</span>
+
+        {showMais ? (
+          <button onClick={() => setMaisOpen(v => !v)} className={cn('flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium', maisOpen ? 'text-gray-700' : 'text-gray-400')}>
+            <MoreHorizontal size={20} />
+            <span>Mais</span>
           </button>
-        </form>
+        ) : (
+          <form action="/api/auth/signout" method="post" className="flex flex-1">
+            <button type="submit" className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium text-gray-400">
+              <LogOut size={20} />
+              <span>Sair</span>
+            </button>
+          </form>
+        )}
       </nav>
+
+      {/* Drawer "Mais" */}
+      {maisOpen && (
+        <>
+          <div className="lg:hidden fixed inset-0 z-30 bg-black/20" onClick={() => setMaisOpen(false)} />
+          <div className="lg:hidden fixed bottom-[57px] inset-x-0 z-40 bg-white border-t border-gray-200 rounded-t-2xl shadow-xl">
+            <div className="p-4 pt-3">
+              <div className="w-8 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+              <div className="grid grid-cols-4 gap-2">
+                {overflowItems.map(({ label, href, icon: Icon }) => {
+                  const active = isActive(href)
+                  return (
+                    <Link key={href} href={href} onClick={() => setMaisOpen(false)}
+                      className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-xs font-medium transition"
+                      style={active ? { color: primaryColor, backgroundColor: `${primaryColor}15` } : { color: '#6b7280' }}
+                    >
+                      <Icon size={22} />
+                      <span className="text-center leading-tight">{label}</span>
+                    </Link>
+                  )
+                })}
+                <form action="/api/auth/signout" method="post">
+                  <button type="submit" className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-xs font-medium text-gray-500 w-full">
+                    <LogOut size={22} />
+                    <span>Sair</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   )
 }

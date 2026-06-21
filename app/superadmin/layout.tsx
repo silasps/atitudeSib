@@ -1,13 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import Link from 'next/link'
 import { Building2, LogOut, LayoutDashboard, Users, Settings } from 'lucide-react'
-
-const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/superadmin', icon: LayoutDashboard },
-  { label: 'Organizações', href: '/superadmin/organizacoes', icon: Building2 },
-  { label: 'Usuários', href: '/superadmin/usuarios', icon: Users },
-  { label: 'Config', href: '/superadmin/configuracoes', icon: Settings },
-]
+import { SuperadminBottomNav } from './superadmin-bottom-nav'
 
 export default async function SuperadminLayout({ children }: { children: React.ReactNode }) {
   await requireRole(['superadmin'])
@@ -51,28 +45,7 @@ export default async function SuperadminLayout({ children }: { children: React.R
         </form>
       </aside>
 
-      {/* Bottom nav — mobile only */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-gray-950 border-t border-white/10 flex items-stretch">
-        {NAV_ITEMS.map(({ label, href, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium text-gray-400 hover:text-white transition-colors"
-          >
-            <Icon size={20} />
-            <span>{label}</span>
-          </Link>
-        ))}
-        <form action="/api/auth/signout" method="post" className="flex flex-1">
-          <button
-            type="submit"
-            className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium text-gray-400 hover:text-white transition-colors"
-          >
-            <LogOut size={20} />
-            <span>Sair</span>
-          </button>
-        </form>
-      </nav>
+      <SuperadminBottomNav />
 
       <main className="flex-1 overflow-auto pb-16 lg:pb-0">
         {children}
