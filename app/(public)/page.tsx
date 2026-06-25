@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { resolveOrgFromHost, getSiteConfig } from '@/lib/tenant'
 import { COLOR_PALETTE } from '@/types'
+import { LandingPage } from './_components/landing-page'
 
 export default async function PublicHomePage() {
   const headersList = await headers()
@@ -12,7 +13,7 @@ export default async function PublicHomePage() {
 
   // Se não há tenant ou o site não está publicado, mostra a landing da plataforma
   if (!tenantResult || !siteConfig?.publicado) {
-    return <PlatformLanding />
+    return <LandingPage />
   }
 
   const colors = COLOR_PALETTE[siteConfig.cor_primaria as keyof typeof COLOR_PALETTE]
@@ -143,26 +144,3 @@ export default async function PublicHomePage() {
   )
 }
 
-function PlatformLanding() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center px-6">
-      <div className="text-center text-white max-w-2xl">
-        <div className="w-24 h-24 bg-white/20 rounded-3xl flex items-center justify-center mx-auto mb-8">
-          <span className="text-4xl font-black">OS</span>
-        </div>
-        <h1 className="text-5xl font-bold mb-4">Ostrick Social</h1>
-        <p className="text-xl text-blue-200 mb-8">
-          Plataforma completa de gestão para projetos sociais e ONGs
-        </p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <a
-            href="/entrar"
-            className="px-8 py-3 bg-white text-blue-900 font-semibold rounded-full hover:bg-blue-50 transition"
-          >
-            Acessar plataforma
-          </a>
-        </div>
-      </div>
-    </div>
-  )
-}

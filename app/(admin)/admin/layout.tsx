@@ -18,7 +18,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const impOrgId = cookieStore.get('sa_imp_org_id')?.value
   const isImpersonating = !!impOrgId && profile.role === 'superadmin'
 
-  // Preview de role — apenas superadmin pode simular outras roles
   const previewCookie = cookieStore.get('os_admin_preview_role')?.value ?? null
   const previewRole: UserRole | null =
     profile.role === 'superadmin' && previewCookie && PREVIEWABLE.includes(previewCookie as UserRole)
@@ -53,33 +52,55 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     colors = COLOR_PALETTE[cor as keyof typeof COLOR_PALETTE] || COLOR_PALETTE['azul-oceano']
   }
 
-  const topPadding = previewRole
-    ? isImpersonating ? 'pt-20' : 'pt-10'
-    : isImpersonating ? 'pt-4 lg:pt-10' : 'pt-0'
+  // Banners fixos aparecem quando preview ou impersonação está ativa
+  const showPreviewBanner = !!previewRole
+  const showImpBanner = isImpersonating
+
+  // Padding do conteúdo para não ficar atrás dos banners fixos
+  const bannerPt = showPreviewBanner || showImpBanner ? 'pt-10' : 'pt-0'
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      {previewRole && <RolePreviewBanner previewRole={previewRole} />}
-      {isImpersonating && <ImpersonationBanner orgNome={impOrgNome} />}
-      <AdminSidebar
-        orgName={orgName}
-        logoUrl={logoUrl}
-        primaryColor={colors.primary}
-        userNome={profile.nome}
-        userRole={profile.role}
-        effectiveRole={effectiveRole}
-      />
-      <div className="flex-1 flex flex-col min-w-0 overflow-auto">
-        {/* Topbar "Visualizar como" — desktop, superadmin only */}
-        {profile.role === 'superadmin' && (
-          <div className="hidden lg:flex sticky top-0 z-20 bg-white/90 backdrop-blur-sm border-b border-gray-100 px-6 h-12 items-center justify-end shrink-0">
-            <RolePreviewDropdown currentPreview={previewRole} />
+    <div className="min-h-screen flex flex-col bg-gray-50">
+
+      {/* ── Banners fixos (aparecem sobre tudo, z-50) ── */}
+      {showPreviewBanner && <RolePreviewBanner previewRole={previewRole!} />}
+      {showImpBanner && <ImpersonationBanner orgNome={impOrgNome} />}
+
+      {/* ── Topbar full-width — superadmin, desktop, sem banner ativo ── */}
+      {profile.role === 'superadmin' && !showPreviewBanner && !showImpBanner && (
+        <header className="hidden lg:flex shrink-0 sticky top-0 z-30 bg-white border-b border-gray-100 h-12 items-center justify-between px-6">
+          <div className="flex items-center gap-2.5">
+            {logoUrl ? (
+              <img src={logoUrl} alt={orgName} className="h-6 w-6 object-contain rounded" />
+            ) : (
+              <div
+                className="w-6 h-6 rounded-md flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                style={{ backgroundColor: colors.primary }}
+              >
+                {orgName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span className="text-sm font-semibold text-gray-700 truncate">{orgName}</span>
           </div>
-        )}
-        <main className={`flex-1 pb-16 lg:pb-0 ${topPadding}`}>
+          <RolePreviewDropdown currentPreview={previewRole} />
+        </header>
+      )}
+
+      {/* ── Corpo: sidebar + conteúdo ── */}
+      <div className="flex flex-1 min-h-0">
+        <AdminSidebar
+          orgName={orgName}
+          logoUrl={logoUrl}
+          primaryColor={colors.primary}
+          userNome={profile.nome}
+          userRole={profile.role}
+          effectiveRole={effectiveRole}
+        />
+        <main className={`flex-1 overflow-auto pb-16 lg:pb-0 min-w-0 ${bannerPt}`}>
           {children}
         </main>
       </div>
+
     </div>
   )
 }

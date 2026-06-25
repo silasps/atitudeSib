@@ -31,8 +31,6 @@ export default function ProfessorSidebar({ orgName, logoUrl, primaryColor, userN
   const showMais = NAV_ITEMS.length > MAX_PRIMARY
   const primaryItems = showMais ? NAV_ITEMS.slice(0, MAX_PRIMARY) : NAV_ITEMS
   const overflowItems = showMais ? NAV_ITEMS.slice(MAX_PRIMARY) : []
-  const totalSlots = primaryItems.length + 1
-  const centerIdx = Math.floor((totalSlots - 1) / 2)
 
   return (
     <>
@@ -83,44 +81,36 @@ export default function ProfessorSidebar({ orgName, logoUrl, primaryColor, userN
       </aside>
 
       {/* Bottom nav — mobile only */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 flex items-end">
-        {primaryItems.map(({ label, href, icon: Icon }, idx) => {
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-100 flex items-stretch">
+        {primaryItems.map(({ label, href, icon: Icon }) => {
           const active = isActive(href)
-          const isCenter = idx === centerIdx
-
-          if (isCenter) {
-            return (
-              <Link key={href} href={href} onClick={() => setMaisOpen(false)} className="flex flex-1 flex-col items-center gap-0.5 pb-2">
-                <div className="w-12 h-12 -mt-4 rounded-full flex items-center justify-center shadow-md transition-colors"
-                  style={{ backgroundColor: active ? primaryColor : `${primaryColor}20` }}>
-                  <Icon size={22} style={{ color: active ? 'white' : primaryColor }} />
-                </div>
-                <span className="text-[10px] font-medium" style={{ color: active ? primaryColor : '#9ca3af' }}>{label}</span>
-              </Link>
-            )
-          }
-
           return (
             <Link key={href} href={href} onClick={() => setMaisOpen(false)}
-              className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors"
-              style={active ? { color: primaryColor } : {}}
+              className="flex flex-1 flex-col items-center justify-center pt-2 pb-3 gap-0.5"
             >
-              <Icon size={20} className={active ? '' : 'text-gray-400'} style={active ? { color: primaryColor } : {}} />
-              <span className={active ? '' : 'text-gray-400'}>{label}</span>
+              <div className="px-5 py-1 rounded-full transition-colors"
+                style={active ? { backgroundColor: `${primaryColor}18` } : {}}>
+                <Icon size={20} style={{ color: active ? primaryColor : '#9ca3af' }} />
+              </div>
+              <span className="text-[10px] font-medium" style={{ color: active ? primaryColor : '#9ca3af' }}>{label}</span>
             </Link>
           )
         })}
 
         {showMais ? (
-          <button onClick={() => setMaisOpen(v => !v)} className={cn('flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium', maisOpen ? 'text-gray-700' : 'text-gray-400')}>
-            <MoreHorizontal size={20} />
-            <span>Mais</span>
+          <button onClick={() => setMaisOpen(v => !v)} className="flex flex-1 flex-col items-center justify-center pt-2 pb-3 gap-0.5">
+            <div className={cn('px-5 py-1 rounded-full transition-colors', maisOpen ? 'bg-gray-100' : '')}>
+              <MoreHorizontal size={20} className={maisOpen ? 'text-gray-700' : 'text-gray-400'} />
+            </div>
+            <span className={cn('text-[10px] font-medium', maisOpen ? 'text-gray-700' : 'text-gray-400')}>Mais</span>
           </button>
         ) : (
           <form action="/api/auth/signout" method="post" className="flex flex-1">
-            <button type="submit" className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium text-gray-400">
-              <LogOut size={20} />
-              <span>Sair</span>
+            <button type="submit" className="flex flex-1 flex-col items-center justify-center pt-2 pb-3 gap-0.5">
+              <div className="px-5 py-1 rounded-full">
+                <LogOut size={20} className="text-gray-400" />
+              </div>
+              <span className="text-[10px] font-medium text-gray-400">Sair</span>
             </button>
           </form>
         )}
