@@ -57,7 +57,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const showImpBanner = isImpersonating
 
   // Padding do conteúdo para não ficar atrás dos banners fixos
-  const bannerPt = showPreviewBanner || showImpBanner ? 'pt-10' : 'pt-0'
+  const bannerPt = showPreviewBanner || showImpBanner ? 'pt-8' : 'pt-0'
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

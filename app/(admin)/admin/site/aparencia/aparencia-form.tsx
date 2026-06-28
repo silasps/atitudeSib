@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, Check } from 'lucide-react'
+import { Loader2, Check, Eye } from 'lucide-react'
 import { COLOR_PALETTE } from '@/types'
 import type { SiteConfig, SiteTemplate, CorPrimaria } from '@/types'
+import { LogoUploader } from './logo-uploader'
 
 const TEMPLATES: { id: SiteTemplate; label: string; desc: string; emoji: string }[] = [
   { id: 'minimalista',   label: 'Minimalista',   desc: 'Clean, foco em texto e missão', emoji: '✦' },
@@ -15,9 +16,10 @@ const TEMPLATES: { id: SiteTemplate; label: string; desc: string; emoji: string 
 
 interface Props {
   config: SiteConfig | null
+  subdomain?: string
 }
 
-export default function AparenciaForm({ config }: Props) {
+export default function AparenciaForm({ config, subdomain }: Props) {
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [template, setTemplate] = useState<SiteTemplate>(config?.template_id || 'comunitario')
@@ -102,24 +104,10 @@ export default function AparenciaForm({ config }: Props) {
       {/* Logo */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Logo</h2>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">URL do logo</label>
-          <input
-            value={logoUrl}
-            onChange={e => setLogoUrl(e.target.value)}
-            placeholder="https://... (PNG, SVG ou JPG)"
-            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p className="text-xs text-gray-400 mt-1">
-            Faça upload da imagem no Storage do Supabase e cole o link público aqui.
-          </p>
-        </div>
-        {logoUrl && (
-          <div className="mt-4 flex items-center gap-3">
-            <img src={logoUrl} alt="Logo preview" className="h-12 w-auto object-contain rounded border border-gray-200 p-1" />
-            <button onClick={() => setLogoUrl('')} className="text-xs text-red-500 hover:text-red-600">Remover</button>
-          </div>
-        )}
+        <LogoUploader
+          currentUrl={logoUrl || null}
+          onSaved={url => setLogoUrl(url)}
+        />
       </div>
 
       {/* Publicação */}
@@ -139,6 +127,18 @@ export default function AparenciaForm({ config }: Props) {
             </p>
           </div>
         </label>
+
+        {publicado && subdomain && (
+          <a
+            href={`https://${subdomain}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-50 border border-green-200 text-green-700 hover:bg-green-100 transition text-sm font-medium"
+          >
+            <Eye size={16} />
+            Visualizar site público
+          </a>
+        )}
       </div>
 
       <div className="flex items-center gap-3">

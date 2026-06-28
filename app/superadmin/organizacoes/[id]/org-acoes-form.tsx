@@ -34,14 +34,15 @@ export default function OrgAcoesForm({ org }: { org: Organization }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+    <div className="space-y-3">
+      {/* Mobile: 2 colunas (Plano | Status). Desktop: linha horizontal */}
+      <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-end sm:gap-4">
         <div>
           <label className="block text-xs text-gray-400 mb-1">Plano</label>
           <select
             value={plano}
             onChange={e => setPlano(e.target.value)}
-            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             {PLANOS.map(p => (
               <option key={p} value={p} className="bg-gray-900">{p}</option>
@@ -51,37 +52,40 @@ export default function OrgAcoesForm({ org }: { org: Organization }) {
 
         <div>
           <label className="block text-xs text-gray-400 mb-1">Status</label>
-          <div className="flex items-center gap-3">
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setAtivo(true)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition ${ativo ? 'bg-emerald-600 text-white' : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${ativo ? 'bg-emerald-600 text-white' : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}
             >
               Ativa
             </button>
             <button
               type="button"
               onClick={() => setAtivo(false)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition ${!ativo ? 'bg-red-700 text-white' : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${!ativo ? 'bg-red-700 text-white' : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}
             >
               Inativa
             </button>
           </div>
         </div>
+      </div>
 
+      {/* Salvar — largura total no mobile, auto no desktop */}
+      <div className="sm:flex sm:items-center sm:gap-4">
         <button
           onClick={handleSave}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-500 transition disabled:opacity-50 self-start sm:self-auto"
+          className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-500 transition disabled:opacity-50"
         >
           {loading && <Loader2 size={14} className="animate-spin" />}
           Salvar
         </button>
-      </div>
 
-      {msg && (
-        <p className={`text-sm ${msg.includes('Erro') ? 'text-red-400' : 'text-emerald-400'}`}>{msg}</p>
-      )}
+        {msg && (
+          <p className={`text-sm mt-2 sm:mt-0 ${msg.includes('Erro') ? 'text-red-400' : 'text-emerald-400'}`}>{msg}</p>
+        )}
+      </div>
     </div>
   )
 }

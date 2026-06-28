@@ -1,5 +1,8 @@
+import Link from 'next/link'
+import { ChevronRight } from 'lucide-react'
 import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase-server'
+import { ContatoForm } from './contato-form'
 
 export default async function ConfiguracoesPage() {
   const { profile } = await requireRole(['admin', 'superadmin'])
@@ -7,7 +10,7 @@ export default async function ConfiguracoesPage() {
 
   const { data: org } = await supabase
     .from('organizations')
-    .select('id, nome, slug, cnpj, plano, ativo, created_at')
+    .select('id, nome, slug, cnpj, plano, ativo, created_at, email_contato, telefone')
     .eq('id', profile.org_id)
     .single()
 
@@ -57,7 +60,23 @@ export default async function ConfiguracoesPage() {
         </div>
       )}
 
-      <div className="mt-6 bg-gray-50 border border-gray-200 rounded-xl p-6">
+      <ContatoForm
+        emailContato={org?.email_contato ?? null}
+        telefone={org?.telefone ?? null}
+      />
+
+      <Link
+        href="/admin/configuracoes/permissoes"
+        className="mt-6 bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between hover:bg-gray-50 transition block"
+      >
+        <div>
+          <h2 className="font-semibold text-gray-800">Permissões de acesso</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Visualize o que cada função pode fazer no sistema</p>
+        </div>
+        <ChevronRight size={18} className="text-gray-400 shrink-0" />
+      </Link>
+
+      <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-6">
         <h2 className="font-semibold text-gray-800 mb-1">Configurações avançadas</h2>
         <p className="text-sm text-gray-500">
           Para alterar o nome da organização, CNPJ ou plano, entre em contato com o suporte da plataforma.

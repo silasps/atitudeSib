@@ -42,6 +42,8 @@ export interface Organization {
   plano: string
   ativo: boolean
   created_at: string
+  email_contato: string | null
+  telefone: string | null
 }
 
 export interface Profile {
@@ -305,6 +307,33 @@ export interface CustomDomain {
   org_id: string
   domain: string
   verificado: boolean
+  created_at: string
+}
+
+// ---- Financeiro ----
+
+export type LancamentoTipo = 'receita' | 'despesa'
+export type LancamentoStatus = 'pendente' | 'pago' | 'cancelado' | 'atrasado'
+export type LancamentoCategoria =
+  | 'doacao' | 'mensalidade' | 'patrocinio' | 'subvencao' | 'prestacao_servico' | 'evento_receita'
+  | 'honorario_professor' | 'folha_pagamento' | 'infraestrutura' | 'material' | 'evento_despesa' | 'administrativo' | 'outros'
+export type ReferenciaFinanceiroTipo = 'professor' | 'aluno' | 'voluntario'
+
+export interface LancamentoFinanceiro {
+  id: string
+  org_id: string
+  tipo: LancamentoTipo
+  categoria: LancamentoCategoria
+  descricao: string
+  valor: number
+  data_lancamento: string
+  data_vencimento: string | null
+  data_pagamento: string | null
+  status: LancamentoStatus
+  referencia_tipo: ReferenciaFinanceiroTipo | null
+  referencia_id: string | null
+  observacoes: string | null
+  created_by: string
   created_at: string
 }
 

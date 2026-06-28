@@ -7,11 +7,12 @@ export default async function AparenciaPage() {
   const { profile } = await requireRole(['admin', 'superadmin'])
   const supabase = await createClient()
 
-  const { data: config } = await supabase
-    .from('site_config')
-    .select('*')
-    .eq('org_id', profile.org_id)
-    .single()
+  const [{ data: config }, { data: org }] = await Promise.all([
+    supabase.from('site_config').select('*').eq('org_id', profile.org_id).single(),
+    supabase.from('organizations').select('slug').eq('id', profile.org_id).single(),
+  ])
+
+  const subdomain = org?.slug ? `${org.slug}.ostricksocial.com.br` : ''
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-3xl">
@@ -20,7 +21,7 @@ export default async function AparenciaPage() {
         <h1 className="text-2xl font-bold text-gray-900">Aparência</h1>
         <p className="text-gray-500 text-sm mt-1">Escolha o template, as cores e o logo do seu site.</p>
       </div>
-      <AparenciaForm config={config as SiteConfig | null} />
+      <AparenciaForm config={config as SiteConfig | null} subdomain={subdomain} />
     </div>
   )
 }

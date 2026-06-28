@@ -1,43 +1,47 @@
 import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
-import { Globe, Palette, Type, Image, MessageSquare, Link2 } from 'lucide-react'
+import { Palette, Type, Image as ImageIcon, MessageSquare, Link2, Eye } from 'lucide-react'
 import type { SiteConfig } from '@/types'
+import SiteOverviewActions from './_components/site-overview-actions'
 
 export default async function SitePage() {
   const { profile } = await requireRole(['admin', 'superadmin'])
   const supabase = await createClient()
 
-  const { data: config } = await supabase
-    .from('site_config')
-    .select('*')
-    .eq('org_id', profile.org_id)
-    .single()
+  const [configResult, orgResult, domainsResult] = await Promise.all([
+    supabase.from('site_config').select('*').eq('org_id', profile.org_id).single(),
+    supabase.from('organizations').select('slug').eq('id', profile.org_id).single(),
+    supabase.from('custom_domains').select('domain, verificado').eq('org_id', profile.org_id),
+  ])
 
-  const siteConfig = config as SiteConfig | null
+  const siteConfig = configResult.data as SiteConfig | null
+  const orgSlug = orgResult.data?.slug ?? ''
+  const customDomains = domainsResult.data ?? []
+  const verifiedDomains = customDomains.filter(d => d.verificado)
+  const subdomain = `${orgSlug}.ostricksocial.com.br`
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Site Público</h1>
           <p className="text-gray-500 text-sm mt-1">
             Gerencie as informações e aparência do seu site público
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full ${
-            siteConfig?.publicado
-              ? 'bg-green-100 text-green-700'
-              : 'bg-gray-100 text-gray-500'
-          }`}>
-            <Globe size={12} />
-            {siteConfig?.publicado ? 'Publicado' : 'Não publicado'}
-          </span>
-        </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Card de URL + publicação */}
+      <SiteOverviewActions
+        subdomain={subdomain}
+        verifiedDomains={verifiedDomains.map(d => d.domain)}
+        publicado={siteConfig?.publicado ?? false}
+        hasSiteConfig={!!siteConfig}
+      />
+
+      {/* Cards de seções */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
         <SiteCard
           href="/admin/site/aparencia"
           icon={<Palette size={22} className="text-purple-500" />}
@@ -61,7 +65,7 @@ export default async function SitePage() {
         />
         <SiteCard
           href="/admin/site/galeria"
-          icon={<Image size={22} className="text-orange-500" />}
+          icon={<ImageIcon size={22} className="text-orange-500" />}
           title="Galeria de Fotos"
           desc="Imagens e momentos"
           iconBg="bg-orange-50"
@@ -73,19 +77,14 @@ export default async function SitePage() {
           desc="Configure seu domínio próprio"
           iconBg="bg-indigo-50"
         />
+        <SiteCard
+          href="/admin/site/preview"
+          icon={<Eye size={22} className="text-teal-500" />}
+          title="Pré-visualizar"
+          desc="Veja como o visitante vê o site"
+          iconBg="bg-teal-50"
+        />
       </div>
-
-      {siteConfig && !siteConfig.publicado && (
-        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p className="text-sm text-amber-800 font-medium mb-1">Seu site ainda não está publicado</p>
-          <p className="text-xs text-amber-600">
-            Configure o conteúdo e a aparência e depois publique para que visitantes possam ver.
-          </p>
-          <Link href="/admin/site/aparencia" className="inline-block mt-2 text-xs text-amber-700 font-semibold hover:text-amber-800">
-            Configurar e publicar →
-          </Link>
-        </div>
-      )}
     </div>
   )
 }

@@ -17,6 +17,7 @@
     "nextjs-toploader": "^3.9.17",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-easy-crop": "^6.0.2",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {

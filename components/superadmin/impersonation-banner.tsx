@@ -13,18 +13,21 @@ export default function ImpersonationBanner({ orgNome }: { orgNome: string }) {
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-amber-950 px-4 py-2 flex items-center justify-between text-sm font-medium shadow-lg">
-      <div className="flex items-center gap-2">
-        <ShieldAlert size={16} />
-        Você está simulando acesso como superadmin em <strong className="ml-1">{orgNome}</strong>
+    <div className="fixed top-0 left-0 right-0 z-50 h-8 bg-amber-500 text-amber-950 px-3 flex items-center justify-between shadow-sm">
+      <div className="flex items-center gap-1.5 min-w-0">
+        <ShieldAlert size={13} className="shrink-0" />
+        <span className="text-xs font-semibold truncate">
+          <span className="hidden sm:inline">Simulando como superadmin · </span>
+          <strong>{orgNome}</strong>
+        </span>
       </div>
       <button
         onClick={handleSair}
         disabled={loading}
-        className="flex items-center gap-1.5 px-3 py-1 bg-amber-950/20 hover:bg-amber-950/30 rounded-lg transition text-xs"
+        className="shrink-0 flex items-center gap-1 ml-3 px-2 py-0.5 bg-amber-950/15 hover:bg-amber-950/25 rounded transition text-xs font-medium"
       >
-        {loading ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
-        Sair da simulação
+        {loading ? <Loader2 size={11} className="animate-spin" /> : <X size={11} />}
+        <span className="hidden sm:inline">Sair</span>
       </button>
     </div>
   )

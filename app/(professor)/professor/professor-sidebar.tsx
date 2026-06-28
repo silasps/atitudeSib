@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, BookOpen, MessageSquare, LogOut, ChevronRight, MoreHorizontal } from 'lucide-react'
+import { LayoutDashboard, BookOpen, MessageSquare, DollarSign, LogOut, ChevronRight, MoreHorizontal } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 
 interface Props {
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { label: 'Início',        href: '/professor',             icon: LayoutDashboard },
   { label: 'Minhas Turmas', href: '/professor/turmas',      icon: BookOpen },
   { label: 'Comunicados',   href: '/professor/comunicados', icon: MessageSquare },
+  { label: 'Financeiro',    href: '/professor/financeiro',  icon: DollarSign },
 ]
 
 const MAX_PRIMARY = 4

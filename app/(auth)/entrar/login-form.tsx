@@ -76,6 +76,13 @@ export default function LoginForm({ primaryColor }: LoginFormProps) {
         {loading && <Loader2 size={16} className="animate-spin" />}
         {loading ? 'Entrando...' : 'Entrar'}
       </button>
+
+      <p className="text-center text-sm text-gray-400 pt-2">
+        Não tem conta?{' '}
+        <a href="/criar-conta" className="font-medium hover:underline" style={{ color: primaryColor }}>
+          Criar conta grátis →
+        </a>
+      </p>
     </form>
   )
 }

@@ -7,8 +7,15 @@ import type { Organization, Profile } from '@/types'
 import OrgAcoesForm from './org-acoes-form'
 import ImpersonarButtons from './impersonar-buttons'
 
-export default async function OrgDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrgDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ role?: string }>
+}) {
   const { id } = await params
+  const { role: roleFilter } = await searchParams
   const supabase = await createServiceClient()
 
   const [{ data: org }, { data: profiles }] = await Promise.all([
@@ -40,15 +47,22 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
 
       <div className="grid grid-cols-3 gap-3 mb-8">
         {[
-          { label: 'Admins / Funcionários', value: adminCount },
-          { label: 'Professores', value: professorCount },
-          { label: 'Alunos', value: alunoCount },
-        ].map(s => (
-          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <p className="text-xs text-gray-400 mb-1">{s.label}</p>
-            <p className="text-2xl font-bold">{s.value}</p>
-          </div>
-        ))}
+          { label: 'Equipe', value: adminCount, role: 'admin' },
+          { label: 'Professores', value: professorCount, role: 'professor' },
+          { label: 'Alunos', value: alunoCount, role: 'aluno' },
+        ].map(s => {
+          const isActive = roleFilter === s.role
+          return (
+            <Link
+              key={s.role}
+              href={isActive ? `/superadmin/organizacoes/${id}#usuarios` : `/superadmin/organizacoes/${id}?role=${s.role}#usuarios`}
+              className={`block bg-white/5 border rounded-xl p-4 transition hover:bg-white/10 ${isActive ? 'border-white/40 ring-1 ring-white/20' : 'border-white/10'}`}
+            >
+              <p className="text-xs text-gray-400 mb-1">{s.label}</p>
+              <p className="text-2xl font-bold">{s.value}</p>
+            </Link>
+          )
+        })}
       </div>
 
       {/* Gestão de plano e status */}
@@ -65,11 +79,34 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
       </div>
 
       {/* Lista de usuários */}
-      {profiles && profiles.length > 0 && (
-        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-white/10 flex items-center gap-2">
-            <Users size={16} className="text-gray-400" />
-            <h2 className="font-semibold">Usuários da organização</h2>
+      {profiles && profiles.length > 0 && (() => {
+        const roleMap: Record<string, string[]> = {
+          admin: ['admin', 'funcionario'],
+          professor: ['professor'],
+          aluno: ['aluno'],
+        }
+        const filtered = roleFilter && roleMap[roleFilter]
+          ? profiles.filter(p => roleMap[roleFilter].includes(p.role))
+          : profiles
+        const titleMap: Record<string, string> = {
+          admin: 'Equipe (admins e funcionários)',
+          professor: 'Professores',
+          aluno: 'Alunos',
+        }
+        return (
+        <div id="usuarios" className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Users size={16} className="text-gray-400" />
+              <h2 className="font-semibold">
+                {roleFilter ? titleMap[roleFilter] : 'Usuários da organização'}
+              </h2>
+            </div>
+            {roleFilter && (
+              <Link href={`/superadmin/organizacoes/${id}`} className="text-xs text-gray-400 hover:text-white transition">
+                Ver todos
+              </Link>
+            )}
           </div>
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -83,7 +120,7 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {profiles.map((p: Profile) => (
+              {filtered.map((p: Profile) => (
                 <tr key={p.id} className="hover:bg-white/5 transition">
                   <td className="px-5 py-3 font-medium">{p.nome}</td>
                   <td className="px-5 py-3 text-gray-400 text-xs">{p.email}</td>
@@ -102,7 +139,8 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
           </table>
           </div>
         </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

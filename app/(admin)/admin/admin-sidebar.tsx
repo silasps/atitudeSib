@@ -5,13 +5,14 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen,
-  Heart, Globe, Settings, LogOut, ChevronRight, MoreHorizontal,
+  Heart, Globe, Settings, LogOut, ChevronRight, MoreHorizontal, DollarSign,
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import {
   canVerDashboard, canVerAlunos, canVerTurmas,
   canGerenciarUsuarios, canGerenciarVoluntariado,
   canGerenciarSite, canGerenciarConfiguracoes,
+  canVerFinanceiro,
   ROLE_LABELS,
 } from '@/lib/rbac'
 import type { UserRole } from '@/types'
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { label: 'Usuários',     href: '/admin/usuarios',      icon: Users,           can: canGerenciarUsuarios },
   { label: 'Alunos',       href: '/admin/alunos',        icon: GraduationCap,   can: canVerAlunos },
   { label: 'Turmas',       href: '/admin/turmas',        icon: BookOpen,        can: canVerTurmas },
+  { label: 'Financeiro',   href: '/admin/financeiro',    icon: DollarSign,      can: canVerFinanceiro },
   { label: 'Voluntariado', href: '/admin/voluntariado',  icon: Heart,           can: canGerenciarVoluntariado },
   { label: 'Site',         href: '/admin/site',          icon: Globe,           can: canGerenciarSite },
   { label: 'Config',       href: '/admin/configuracoes', icon: Settings,        can: canGerenciarConfiguracoes },
@@ -162,52 +164,48 @@ export default function AdminSidebar({
         )}
       </nav>
 
-      {/* Drawer "Mais" */}
-      {maisOpen && (
-        <>
-          <div
-            className="lg:hidden fixed inset-0 z-30 bg-black/20"
-            onClick={() => setMaisOpen(false)}
-          />
-          <div className="lg:hidden fixed bottom-[57px] inset-x-0 z-40 bg-white border-t border-gray-200 rounded-t-2xl shadow-xl">
-            <div className="p-4 pt-3">
-              <div className="w-8 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
-              <div className="grid grid-cols-4 gap-2">
-                {overflowItems.map(({ label, href, icon: Icon }) => {
-                  const active = isActive(href)
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      onClick={() => setMaisOpen(false)}
-                      className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-xs font-medium transition"
-                      style={
-                        active
-                          ? { color: primaryColor, backgroundColor: `${primaryColor}15` }
-                          : { color: '#6b7280' }
-                      }
-                    >
-                      <Icon size={22} />
-                      <span className="text-center leading-tight">
-                        {label === 'Site' ? 'Site Público' : label === 'Config' ? 'Config.' : label}
-                      </span>
-                    </Link>
-                  )
-                })}
-                <form action="/api/auth/signout" method="post">
-                  <button
-                    type="submit"
-                    className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-xs font-medium text-gray-500 w-full"
-                  >
-                    <LogOut size={22} />
-                    <span>Sair</span>
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Bottom Sheet "Mais" */}
+      <div
+        className={cn('lg:hidden fixed inset-0 z-50 bg-black/40 transition-opacity duration-300', maisOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none')}
+        onClick={() => setMaisOpen(false)}
+      />
+      <div
+        className={cn(
+          'lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out',
+          maisOpen ? 'translate-y-0' : 'translate-y-full',
+        )}
+      >
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-1" />
+        <div className="px-3 pb-8 pt-2">
+          {overflowItems.map(({ label, href, icon: Icon }) => {
+            const active = isActive(href)
+            const displayLabel = label === 'Site' ? 'Site Público' : label === 'Config' ? 'Configurações' : label
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMaisOpen(false)}
+                className="flex items-center gap-4 px-4 py-3.5 rounded-xl transition-colors"
+                style={active ? { color: primaryColor, backgroundColor: `${primaryColor}10` } : { color: '#374151' }}
+              >
+                <Icon size={22} style={{ color: active ? primaryColor : '#6b7280' }} />
+                <span className="text-sm font-medium">{displayLabel}</span>
+                {active && <ChevronRight size={16} className="ml-auto" style={{ color: primaryColor }} />}
+              </Link>
+            )
+          })}
+          <div className="my-2 border-t border-gray-100" />
+          <form action="/api/auth/signout" method="post">
+            <button
+              type="submit"
+              className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-gray-500 hover:bg-gray-50 transition-colors w-full"
+            >
+              <LogOut size={22} className="text-gray-400" />
+              <span className="text-sm font-medium">Sair</span>
+            </button>
+          </form>
+        </div>
+      </div>
     </>
   )
 }
