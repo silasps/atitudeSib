@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-server'
 import { canGerenciarFinanceiro } from '@/lib/rbac'
 import { Plus, Pencil } from 'lucide-react'
 import DeleteLancamentoButton from './_components/delete-lancamento-button'
-import type { LancamentoFinanceiro, LancamentoTipo, LancamentoStatus } from '@/types'
+import type { LancamentoFinanceiro, LancamentoStatus } from '@/types'
 
 function formatBRL(centavos: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(centavos / 100)

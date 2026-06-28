@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Copy, Check, ExternalLink, Globe, Loader2, Eye } from 'lucide-react'
+import { Copy, Check, Globe, Loader2, Eye } from 'lucide-react'
 
 interface Props {
   subdomain: string
