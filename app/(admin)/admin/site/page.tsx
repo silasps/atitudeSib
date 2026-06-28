@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase-server'
+import { headers } from 'next/headers'
 import Link from 'next/link'
 import { Palette, Type, Image as ImageIcon, MessageSquare, Link2, Eye } from 'lucide-react'
 import type { SiteConfig } from '@/types'
@@ -21,6 +22,11 @@ export default async function SitePage() {
   const verifiedDomains = customDomains.filter(d => d.verificado)
   const subdomain = `${orgSlug}.ostricksocial.com.br`
 
+  const headersList = await headers()
+  const host = headersList.get('host') || 'localhost'
+  const protocol = host.startsWith('localhost') ? 'http' : 'https'
+  const pathUrl = `${protocol}://${host}/s/${orgSlug}`
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -35,6 +41,7 @@ export default async function SitePage() {
       {/* Card de URL + publicação */}
       <SiteOverviewActions
         subdomain={subdomain}
+        pathUrl={pathUrl}
         verifiedDomains={verifiedDomains.map(d => d.domain)}
         publicado={siteConfig?.publicado ?? false}
         hasSiteConfig={!!siteConfig}

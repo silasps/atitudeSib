@@ -7,6 +7,7 @@ import AdminSidebar from './admin-sidebar'
 import ImpersonationBanner from '@/components/superadmin/impersonation-banner'
 import { RolePreviewBanner } from '@/components/admin/role-preview-banner'
 import { RolePreviewDropdown } from '@/components/admin/role-preview-dropdown'
+import { MelhoriaFab } from '@/components/melhoria-fab'
 import type { UserRole } from '@/types'
 
 const PREVIEWABLE: UserRole[] = ['admin', 'funcionario']
@@ -101,6 +102,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </main>
       </div>
 
+      <MelhoriaFab />
     </div>
   )
 }

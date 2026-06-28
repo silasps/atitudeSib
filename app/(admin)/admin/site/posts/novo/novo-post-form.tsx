@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
+import { SiteImageUploader } from '../../_components/site-image-uploader'
 
 export default function NovoPostForm() {
   const router = useRouter()
@@ -42,18 +43,25 @@ export default function NovoPostForm() {
           <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
           <input value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} required placeholder="Título da publicação" className={inputClass} />
         </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-            <select value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))} className={inputClass}>
-              <option value="projeto">Projeto</option>
-              <option value="noticia">Notícia</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Imagem (URL)</label>
-            <input value={form.imagem_url} onChange={e => setForm(f => ({ ...f, imagem_url: e.target.value }))} placeholder="https://..." className={inputClass} />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+          <select value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))} className={inputClass}>
+            <option value="projeto">Projeto</option>
+            <option value="noticia">Notícia</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Imagem de capa</label>
+          <SiteImageUploader
+            currentUrl={form.imagem_url}
+            slot="post-capa"
+            aspect={16 / 9}
+            modalTitle="Ajustar imagem de capa"
+            hint="PNG, JPG ou WebP · máx. 8MB"
+            description="Aparece como capa do card de projeto/notícia no site. Tamanho ideal: 1200×675 px."
+            exampleImage="/site-examples/post.svg"
+            onSaved={url => setForm(f => ({ ...f, imagem_url: url }))}
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Conteúdo</label>

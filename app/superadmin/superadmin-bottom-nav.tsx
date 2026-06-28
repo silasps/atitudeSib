@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Building2, LogOut, LayoutDashboard, Users, Settings, MoreHorizontal, ChevronRight } from 'lucide-react'
+import { Building2, LogOut, LayoutDashboard, Users, Settings, Lightbulb, MoreHorizontal, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
   { label: 'Dashboard',    href: '/superadmin',               icon: LayoutDashboard },
   { label: 'Organizações', href: '/superadmin/organizacoes',  icon: Building2 },
   { label: 'Usuários',     href: '/superadmin/usuarios',      icon: Users },
+  { label: 'Melhorias',    href: '/superadmin/melhorias',     icon: Lightbulb },
   { label: 'Config',       href: '/superadmin/configuracoes', icon: Settings },
 ]
 

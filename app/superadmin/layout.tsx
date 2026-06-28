@@ -1,7 +1,8 @@
 import { requireRole } from '@/lib/auth'
 import Link from 'next/link'
-import { Building2, LogOut, LayoutDashboard, Users, Settings } from 'lucide-react'
+import { Building2, LogOut, LayoutDashboard, Users, Settings, Lightbulb } from 'lucide-react'
 import { SuperadminBottomNav } from './superadmin-bottom-nav'
+import { MelhoriaFab } from '@/components/melhoria-fab'
 
 export default async function SuperadminLayout({ children }: { children: React.ReactNode }) {
   await requireRole(['superadmin'])
@@ -33,6 +34,9 @@ export default async function SuperadminLayout({ children }: { children: React.R
           </Link>
 
           <p className="text-xs text-gray-600 uppercase tracking-wider px-3 mt-4 mb-1">Sistema</p>
+          <Link href="/superadmin/melhorias" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">
+            <Lightbulb size={16} /> Melhorias
+          </Link>
           <Link href="/superadmin/configuracoes" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">
             <Settings size={16} /> Configurações
           </Link>
@@ -46,6 +50,7 @@ export default async function SuperadminLayout({ children }: { children: React.R
       </aside>
 
       <SuperadminBottomNav />
+      <MelhoriaFab />
 
       <main className="flex-1 overflow-auto pb-16 lg:pb-0">
         {children}
